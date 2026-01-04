@@ -28,9 +28,8 @@ const playerInput = document.getElementById("playerInput");
 const addPlayerBtn = document.getElementById("addPlayerBtn");
 const playersList = document.getElementById("playersList");
 const startBtn = document.getElementById("startBtn");
-const resetBtn = document.getElementById("resetBtn");
 
-const gameCard = document.getElementById("gameCard");
+const gameStage = document.getElementById("gameStage");
 const cardText = document.getElementById("cardText");
 const backBtn = document.getElementById("backBtn");
 
@@ -81,7 +80,7 @@ function showNextCard() {
   cardText.textContent = getRandomCardText();
 }
 
-// (Optionnel) tentative de lock paysage (marche pas partout sur mobile)
+// (Optionnel) tentative de lock paysage (pas fiable partout)
 async function tryLockLandscape() {
   try {
     if (screen.orientation && screen.orientation.lock) {
@@ -97,7 +96,6 @@ addPlayerBtn.addEventListener("click", () => {
   const name = normalizeName(playerInput.value);
   if (!name) return;
 
-  // évite les doublons exacts
   if (state.players.some(p => p.toLowerCase() === name.toLowerCase())) {
     playerInput.value = "";
     playerInput.focus();
@@ -116,22 +114,18 @@ playerInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") addPlayerBtn.click();
 });
 
-resetBtn.addEventListener("click", () => {
-  state.players = [];
-  renderPlayers();
-  startBtn.disabled = true;
-  playerInput.value = "";
-  playerInput.focus();
-});
-
 startBtn.addEventListener("click", async () => {
   await tryLockLandscape();
   showScreen("game");
+
+  // V1 : mode classique => fond bleu
+  gameStage.className = "game-stage classic";
+
   showNextCard();
 });
 
-// Tap/click sur la carte => suivante
-gameCard.addEventListener("click", () => {
+// Tap/click plein écran => suivante
+gameStage.addEventListener("click", () => {
   showNextCard();
 });
 

@@ -1,12 +1,15 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>CULTE</title>
+
+  <!-- Anti cache (bonus) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -26,14 +29,20 @@
       <ul id="playersList" class="players"></ul>
 
       <button id="startBtn" class="btn primary" disabled>Jouer</button>
-      <button id="resetBtn" class="btn ghost">Réinitialiser</button>
     </div>
   </main>
 
   <!-- ÉCRAN JEU (paysage) -->
   <main id="screen-game" class="screen">
-    <div id="gameCard" class="game-card">
-      <div class="badge">Tape pour la carte suivante</div>
+    <!-- Overlay si le tel est en portrait -->
+    <div id="rotateOverlay" class="rotate-overlay">
+      <div class="rotate-box">
+        <div class="rotate-title">Tourne ton téléphone 📱↩️</div>
+        <div class="rotate-sub">Le jeu se joue en paysage.</div>
+      </div>
+    </div>
+
+    <div id="gameStage" class="game-stage classic">
       <div id="cardText" class="card-text">—</div>
     </div>
 
