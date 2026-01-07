@@ -271,3 +271,16 @@ html, body {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
+
+/* --- VERSION DE L'APP --- */
+.app-version {
+    position: fixed;
+    bottom: 5px;
+    right: 10px; /* En bas à droite */
+    font-size: 0.7em;
+    color: var(--text-color);
+    opacity: 0.3; /* Très discret */
+    pointer-events: none; /* On peut cliquer au travers */
+    z-index: 9999;
+    font-family: monospace; /* Style un peu "code" */
+}
