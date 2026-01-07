@@ -199,3 +199,75 @@ body {
     background: var(--text-color);
     color: white;
 }
+
+/* --- BLOQUER LE SCROLL GLOBAL --- */
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Empêche de scroller la page entière */
+    position: fixed; /* Fixe le tout pour éviter le rebond sur iOS */
+}
+
+#app {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* On enlève le padding-bottom global car on gère l'espace interne */
+    padding-bottom: 0; 
+}
+
+/* --- ZONES SCROLLABLES --- */
+
+/* 1. La grille des joueurs sur l'accueil */
+.players-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-content: flex-start;
+    
+    /* GESTION DU SCROLL */
+    max-height: 60vh; /* Prend max 60% de la hauteur de l'écran */
+    overflow-y: auto; /* Scroll vertical si besoin */
+    padding-bottom: 100px; /* Espace pour ne pas cacher le dernier joueur sous le bouton */
+    width: 100%;
+}
+
+/* 2. La liste d'élimination (Vote Undercover) */
+.elimination-list {
+    list-style: none;
+    width: 100%;
+    margin-top: 20px;
+    
+    /* GESTION DU SCROLL */
+    max-height: 50vh; /* Prend max 50% de la hauteur */
+    overflow-y: auto; /* Scroll vertical si besoin */
+    padding-right: 5px; /* Petit espace pour pas coller à la barre de scroll */
+}
+
+/* 3. Le conteneur du jeu (au cas où le texte est long) */
+#game-container {
+    /* ... tes anciennes règles ... */
+    overflow-y: auto; /* Sécurité si le contenu du jeu dépasse */
+    max-height: 85vh; /* Laisse un peu de place pour le bouton fermer */
+}
+
+/* --- CACHER LES BARRES DE SCROLL (Style App) --- */
+
+/* Pour Chrome, Safari et Opera */
+.players-grid::-webkit-scrollbar,
+.elimination-list::-webkit-scrollbar,
+#game-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Pour Firefox et Edge */
+.players-grid,
+.elimination-list,
+#game-container {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
