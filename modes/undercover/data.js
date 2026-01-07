@@ -20,5 +20,7 @@ export const words = [
     { civil: "Cir d'oreille", undercover: "Crotte de nez" },
     { civil: "Théodora", undercover: "Aya Nakamura" },
     { civil: "Levrette", undercover: "Missionaire" },
+    { civil: "Kebab douteux", undercover: "Sandwich triangle périmé" },
+    { civil: "Haleine du matin", undercover: "Haleine de café" },
 
 ];
