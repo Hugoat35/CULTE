@@ -5,5 +5,20 @@ export const words = [
     { civil: "McDo", undercover: "Burger King" },
     { civil: "Plage", undercover: "Piscine" },
     { civil: "Chien", undercover: "Loup" },
-    { civil: "Harry Potter", undercover: "Seigneur des Anneaux" }
+    { civil: "Harry Potter", undercover: "Seigneur des Anneaux" },
+    { civil: "Nike", undercover: "Addidas" },
+    { civil: "Instagram", undercover: "TikTok" },
+    { civil: "Facebook", undercover: "Twitter" },
+    { civil: "Bateau", undercover: "Yacht" },
+    { civil: "Café", undercover: "Thé" },
+    { civil: "Pipi", undercover: "Caca" },
+    { civil: "Mec trop motivé à 8h", undercover: "Mec encore bourré à 8h" },
+    { civil: "DM pour lundi", undercover: "Contrôle surprise" },
+    { civil: "Pub non skippable", undercover: "Sponsor NordVPN" },
+    { civil: "Message laissé en remis", undercover: "Message laissé en vu" },
+    { civil: "Kebab à 2h du mat", undercover: "Tacos en sortie de boîte" },
+    { civil: "Cir d'oreille", undercover: "Crotte de nez" },
+    { civil: "Théodora", undercover: "Aya Nakamura" },
+    { civil: "", undercover: "" },
+
 ];

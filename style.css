@@ -119,3 +119,83 @@ body {
 @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .hidden { display: none !important; }
+
+.settings-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 15px;
+}
+.counter-box { display: flex; align-items: center; gap: 15px; }
+.counter-btn {
+    width: 35px; height: 35px; border-radius: 50%; border: none;
+    background: var(--text-color); color: white; font-weight: bold; font-size: 1.2em;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.counter-val { font-weight: 800; font-size: 1.2em; width: 20px; text-align: center; }
+
+/* Liste d'élimination */
+.elimination-list { list-style: none; width: 100%; margin-top: 20px; }
+.player-row {
+    background: #f4f4f4; padding: 15px; margin-bottom: 10px; border-radius: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: transform 0.1s, background 0.2s;
+    text-align: left;
+}
+.player-row:active { transform: scale(0.98); }
+.player-row.dead { opacity: 0.5; background: #e0e0e0; pointer-events: none; }
+.role-reveal { font-weight: 800; color: var(--accent-color); }
+.role-safe { color: #2ecc71; font-weight: 800; }
+
+.word-display {
+    font-size: 2.2em; font-weight: 800; color: var(--accent-color);
+    padding: 30px; border: 3px dashed #eee; border-radius: 20px; margin: 20px 0;
+}
+
+/* --- MODALE PERSONNALISÉE --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+
+.modal-box {
+    background: white; width: 85%; max-width: 320px;
+    padding: 25px; border-radius: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.modal-overlay.active .modal-box { transform: scale(1); }
+
+.modal-box h3 { margin-bottom: 10px; color: var(--accent-color); font-size: 1.4em; }
+.modal-box p { margin-bottom: 25px; color: #666; font-size: 0.95em; }
+
+.modal-buttons { display: flex; gap: 10px; justify-content: center; }
+.modal-btn {
+    padding: 12px 20px; border: none; border-radius: 12px;
+    font-weight: 600; cursor: pointer; font-family: var(--font-main); flex: 1;
+}
+.modal-btn.primary { background: var(--accent-color); color: white; }
+.modal-btn.secondary { background: #f0f0f0; color: #555; }
+
+/* --- BOUTON SECONDAIRE (Changer de jeu, Annuler...) --- */
+.secondary-btn {
+    width: 100%;
+    padding: 18px;
+    border: 2px solid var(--text-color); /* Bordure au lieu du fond gris */
+    background: transparent;
+    color: var(--text-color);
+    border-radius: 18px;
+    font-size: 1.1em;
+    font-weight: 600;
+    font-family: var(--font-main);
+    cursor: pointer;
+    margin-top: 15px;
+    transition: all 0.2s;
+}
+.secondary-btn:hover {
+    background: var(--text-color);
+    color: white;
+}
