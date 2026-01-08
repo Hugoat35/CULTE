@@ -294,7 +294,7 @@ html, body {
 .app-version {
     position: fixed;
     bottom: 5px;
-    right: 10px; /* En bas à droite */
+    right: 20px; /* En bas à droite */
     font-size: 0.7em;
     color: var(--text-color);
     opacity: 0.3; /* Très discret */
@@ -302,3 +302,4 @@ html, body {
     z-index: 9999;
     font-family: monospace; /* Style un peu "code" */
 }
+

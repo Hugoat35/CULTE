@@ -4,10 +4,34 @@ export default class UndercoverGame {
     constructor(players, container) {
         this.players = players;
         this.container = container;
-        this.config = { undercover: 1, mrWhite: 0 };
+        
+        // --- MODIFICATION : CONFIGURATION AUTOMATIQUE "IDÉALE" ---
+        // Au lieu de mettre 1 et 0 en dur, on calcule selon le nb de joueurs
+        this.config = this.getIdealConfig(players.length);
+        
         this.assignments = [];
         this.currentPlayerIndex = 0;
-        this.secretWord = ""; // Le mot des Civils pour cette partie
+        this.secretWord = ""; 
+    }
+
+    // --- NOUVELLE MÉTHODE : CALCUL DE L'IDÉAL ---
+    getIdealConfig(totalPlayers) {
+        // 3-4 joueurs : 1 Undercover
+        if (totalPlayers <= 4) {
+            return { undercover: 1, mrWhite: 0 };
+        } 
+        // 5-6 joueurs : 1 Undercover + 1 Mr. White
+        else if (totalPlayers <= 6) {
+            return { undercover: 1, mrWhite: 1 };
+        } 
+        // 7-8 joueurs : 2 Undercover + 1 Mr. White
+        else if (totalPlayers <= 8) {
+            return { undercover: 2, mrWhite: 1 };
+        } 
+        // 9+ joueurs : 3 Undercover + 1 Mr. White
+        else {
+            return { undercover: 3, mrWhite: 1 };
+        }
     }
 
     start() { this.renderSettings(); }
@@ -34,7 +58,7 @@ export default class UndercoverGame {
                 <span>🕵️ Undercover</span>
                 <div class="counter-box">
                     <button class="counter-btn" id="sub-uc">-</button>
-                    <span class="counter-val" id="val-uc">1</span>
+                    <span class="counter-val" id="val-uc">${this.config.undercover}</span>
                     <button class="counter-btn" id="add-uc">+</button>
                 </div>
             </div>
@@ -43,7 +67,7 @@ export default class UndercoverGame {
                 <span>👻 Mr. White</span>
                 <div class="counter-box">
                     <button class="counter-btn" id="sub-mw">-</button>
-                    <span class="counter-val" id="val-mw">0</span>
+                    <span class="counter-val" id="val-mw">${this.config.mrWhite}</span>
                     <button class="counter-btn" id="add-mw">+</button>
                 </div>
             </div>
@@ -85,7 +109,6 @@ export default class UndercoverGame {
             }
         };
 
-        // Logic Auto-Balance
         this.container.querySelector('#add-uc').onclick = () => {
             const total = this.config.undercover + this.config.mrWhite;
             if (total < maxBadGuys) {
@@ -112,34 +135,22 @@ export default class UndercoverGame {
         updateUI();
     }
 
-    // --- MODIFICATION ICI : SYSTEME DE PILE OU FACE ---
     setupGame() {
-        // 1. Choix de la paire
         const rawPair = words[Math.floor(Math.random() * words.length)];
-
-        // 2. Pile ou Face pour inverser les rôles (Anti-Méta)
-        // Si true, on inverse. 
+        // Coin Flip (Anti-Méta)
         const swap = Math.random() < 0.5;
         
         const wordCivil = swap ? rawPair.undercover : rawPair.civil;
         const wordUndercover = swap ? rawPair.civil : rawPair.undercover;
 
-        // On sauvegarde le vrai mot civil (pour Mr White)
         this.secretWord = wordCivil; 
 
         let roles = [];
-
-        // Assignation des Undercover avec le mot aléatoire
         for(let i=0; i<this.config.undercover; i++) roles.push({ type: 'Undercover', word: wordUndercover });
-        
-        // Assignation des Mr. White
         for(let i=0; i<this.config.mrWhite; i++) roles.push({ type: 'Mr. White', word: null });
-        
-        // Assignation des Civils avec le mot aléatoire
         const nbCivils = this.players.length - roles.length;
         for(let i=0; i<nbCivils; i++) roles.push({ type: 'Civil', word: wordCivil });
 
-        // Mélange des joueurs
         for (let i = roles.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [roles[i], roles[j]] = [roles[j], roles[i]];
@@ -199,12 +210,16 @@ export default class UndercoverGame {
 
     showDebatePhase() {
         const alivePlayers = this.assignments.filter(p => p.alive);
-        const starter = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+        // Si c'est la première fois qu'on arrive ici (pas de starter défini), on en choisit un
+        if (!this.starterPlayer) {
+            this.starterPlayer = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+        }
 
         this.container.innerHTML = `
             <div style="font-size:3em">🗣️</div>
             <h2>Débattez !</h2>
-            <p><strong>${starter.name}</strong> commence.</p>
+            <p><strong>${this.starterPlayer.name}</strong> commence.</p>
+            
             <h3>Qui voulez-vous éliminer ?</h3>
             <ul class="elimination-list">
                 ${this.assignments.map((p, idx) => `
@@ -214,6 +229,10 @@ export default class UndercoverGame {
                     </li>
                 `).join('')}
             </ul>
+
+            <button id="review-btn" class="secondary-btn" style="margin-top:20px; font-size:0.9em;">
+                👀 J'ai oublié mon mot
+            </button>
         `;
 
         window.handleEliminate = (index) => {
@@ -222,6 +241,62 @@ export default class UndercoverGame {
                 `Vote contre ${this.assignments[index].name} ?`,
                 () => this.eliminatePlayer(index)
             );
+        };
+
+        this.container.querySelector('#review-btn').onclick = () => this.handleReviewWord();
+    }
+
+    handleReviewWord() {
+        const alivePlayers = this.assignments.filter(p => p.alive);
+        
+        let html = `
+            <h2>Qui es-tu ?</h2>
+            <p>Sélectionne ton prénom.</p>
+            <div class="players-grid" style="justify-content:center; gap:15px; margin-top:20px;">`;
+            
+        alivePlayers.forEach(p => {
+            html += `<button class="main-btn" style="background:white; color:var(--text-color); border:2px solid #eee;" 
+                    onclick="window.checkIdentity(${p.originalIndex})">${p.name}</button>`;
+        });
+
+        html += `</div>
+            <button id="cancel-review" class="secondary-btn">Annuler</button>
+        `;
+
+        this.container.innerHTML = html;
+
+        this.container.querySelector('#cancel-review').onclick = () => this.showDebatePhase();
+
+        window.checkIdentity = (originalIndex) => {
+            const player = this.assignments[originalIndex];
+            
+            this.container.innerHTML = `
+                <h2>Sécurité</h2>
+                <div style="font-size:3em; margin:20px 0;">🤫</div>
+                <p>Passe le téléphone à <strong>${player.name}</strong>.</p>
+                <p>Assure-toi que personne ne regarde.</p>
+                
+                <button id="show-reminder-btn" class="main-btn" style="margin-top:30px">Afficher le mot</button>
+                <button id="cancel-reminder" class="secondary-btn">Annuler</button>
+            `;
+
+            this.container.querySelector('#cancel-reminder').onclick = () => this.showDebatePhase();
+            this.container.querySelector('#show-reminder-btn').onclick = () => {
+                let secretContent = "";
+                if (player.role === 'Mr. White') {
+                    secretContent = `<div class="word-display" style="color:#333; border-color:#333;">Mr. White 👻</div>`;
+                } else {
+                    secretContent = `<div class="word-display">${player.word}</div>`;
+                }
+
+                this.container.innerHTML = `
+                    <h2>Rappel</h2>
+                    <p>Ton mot est :</p>
+                    ${secretContent}
+                    <button id="back-to-vote" class="main-btn">Retour au vote</button>
+                `;
+                this.container.querySelector('#back-to-vote').onclick = () => this.showDebatePhase();
+            };
         };
     }
 
@@ -233,7 +308,6 @@ export default class UndercoverGame {
             return;
         }
 
-        // Élimination standard
         this.confirmElimination(index);
     }
 
