@@ -4,6 +4,7 @@ export default class UndercoverGame {
     constructor(players, container) {
         this.players = players;
         this.container = container;
+        this.container.className = '';
         
         // --- MODIFICATION : CONFIGURATION AUTOMATIQUE "IDÉALE" ---
         // Au lieu de mettre 1 et 0 en dur, on calcule selon le nb de joueurs

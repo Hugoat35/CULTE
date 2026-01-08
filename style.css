@@ -312,134 +312,274 @@ html, body {
     font-family: monospace; /* Style un peu "code" */
 }
 
-/* --- MODE RITUEL (PAYSAGE FORCÉ INTELLIGENT) --- */
+/* --- MODE RITUEL (Style CULTE) --- */
 
-/* 1. CONFIGURATION DE BASE (ORDINATEUR / GRAND ÉCRAN) */
-/* Sur PC, l'écran est déjà en paysage, donc on ne tourne pas */
-.force-landscape {
-    position: fixed; /* Prend tout l'écran */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+/* CORRECTION DU CARRÉ BLANC : */
+/* On force le conteneur principal à devenir transparent quand on est en mode Rituel */
+#game-container.rituel-zone {
+    background: transparent !important;
+    box-shadow: none !important; /* On enlève l'ombre du conteneur */
+    border: none !important;
     
-    /* Design sombre et centré */
+    /* On garde le centrage */
+    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: #111;
-    color: white;
-    cursor: pointer;
-    z-index: 1000;
-}
-
-/* 2. CONFIGURATION MOBILE (TÉLÉPHONE EN PORTRAIT) */
-/* Cette règle s'applique UNIQUEMENT si l'écran est petit (max 1024px) ET en mode portrait */
-@media screen and (max-width: 1024px) and (orientation: portrait) {
-    .force-landscape {
-        /* C'est ici qu'on force la rotation */
-        transform: rotate(90deg);
-        transform-origin: center;
-        
-        /* On inverse hauteur et largeur pour simuler le paysage */
-        width: 100vh;
-        height: 100vw;
-        
-        /* On recentre le tout mathématiquement */
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-left: -50vh; /* Moitié de la nouvelle largeur */
-        margin-top: -50vw;  /* Moitié de la nouvelle hauteur */
-        
-        /* On s'assure que ça couvre tout sans barre de scroll */
-        overflow: hidden; 
-    }
-}
-
-/* --- Design des cartes (Commun à PC et Mobile) --- */
-.rituel-card {
-    text-align: center;
     padding: 20px;
-    animation: fadeIn 0.4s ease;
-    width: 90%;
-    max-width: 600px; /* Pour que ça ne soit pas trop large sur PC */
+    perspective: 1000px;
 }
 
+/* La carte blanche (Elle reste blanche, c'est ce qu'on veut) */
+.rituel-card {
+    background: #ffffff;
+    border-radius: 30px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 380px;
+    min-height: 55vh;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15); /* Ombre portée sur la carte uniquement */
+    animation: cardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    user-select: none;
+}
+
+/* ... Le reste du CSS Rituel (category, content, subtext...) reste identique ... */
 .rituel-category {
+    font-family: var(--font-main);
     text-transform: uppercase;
-    font-size: 1.2em;
-    letter-spacing: 3px;
-    opacity: 0.7;
-    margin-bottom: 25px;
+    font-size: 0.8em;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    margin-bottom: 20px;
+    display: inline-block;
 }
 
 .rituel-content {
-    font-size: 2em; /* Un peu plus petit pour éviter que ça déborde */
-    font-weight: 800;
+    font-family: var(--font-main);
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--text-color);
     line-height: 1.4;
+    margin: 20px 0;
 }
 
-/* Style spécial pour les virus */
-.rituel-virus {
-    border: 4px solid #4cd137;
-    background: rgba(76, 209, 55, 0.1);
-    border-radius: 20px;
-    padding: 40px 20px;
-    box-shadow: 0 0 30px rgba(76, 209, 55, 0.2);
-}
-
-.tap-hint {
-    position: absolute;
-    bottom: 30px;
+.rituel-subtext {
     font-size: 0.9em;
-    opacity: 0.5;
-    animation: pulse 2s infinite;
+    color: #999;
+    font-weight: 500;
+}
+
+.tap-indicator {
+    margin-top: 25px;
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes cardPop {
+    from { opacity: 0; transform: translateY(50px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes pulse {
-    0% { opacity: 0.3; }
-    50% { opacity: 0.7; transform: scale(1.05); }
-    100% { opacity: 0.3; }
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
 }
 
-/* Design des cartes Rituel */
-.rituel-card {
+/* --- MODE RITUEL : FLIP 3D --- */
+
+/* Le conteneur qui donne la perspective 3D */
+.flip-container {
+    background-color: transparent;
+    width: 100%;
+    max-width: 380px;
+    min-height: 55vh; /* Hauteur fixe nécessaire pour le flip */
+    perspective: 1000px; /* Profondeur 3D */
+    margin: 0 auto;
+}
+
+/* Le "papier" qui tourne (contient le recto et le verso) */
+.flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
     text-align: center;
-    padding: 20px;
-    animation: fadeIn 0.3s ease;
-    width: 80%;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+    border-radius: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }
 
-.rituel-category {
-    text-transform: uppercase;
-    font-size: 1.2em;
-    letter-spacing: 3px;
-    opacity: 0.7;
-    margin-bottom: 20px;
+/* La classe qu'on ajoute pour retourner la carte */
+.flip-container.flipped .flip-inner {
+    transform: rotateY(180deg);
 }
 
-.rituel-content {
-    font-size: 2.2em;
-    font-weight: 800;
-    line-height: 1.3;
-}
-
-.rituel-virus {
-    border: 4px solid #4cd137;
-    background: rgba(76, 209, 55, 0.1);
-    border-radius: 20px;
-    padding: 30px;
-}
-
-/* Petit indicateur pour dire de cliquer */
-.tap-hint {
+/* Style commun Recto / Verso */
+.flip-front, .flip-back {
     position: absolute;
-    bottom: 20px;
-    font-size: 0.8em;
-    opacity: 0.4;
-    animation: pulse 2s infinite;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden; /* Cache le dos */
+    backface-visibility: hidden;
+    border-radius: 30px;
+    padding: 30px;
+    background: white;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- RECTO (Question) --- */
+.flip-front {
+    z-index: 2;
+}
+
+/* --- VERSO (Vote) --- */
+.flip-back {
+    transform: rotateY(180deg); /* Déjà retourné au départ */
+    background: #f8f9fa; /* Fond légèrement différent pour le dos */
+    overflow-y: auto; /* Sécurité si beaucoup de joueurs */
+}
+
+/* --- MODE RITUEL : FLIP 3D & ANIMATIONS --- */
+
+/* Le conteneur qui donne la perspective 3D et qui sortira */
+.flip-container {
+    /* ... (reste identique) ... */
+    background-color: transparent;
+    width: 100%;
+    max-width: 380px;
+    min-height: 55vh;
+    perspective: 1000px;
+    margin: 0 auto;
+    /* IMPORTANT : pour que l'animation de sortie soit fluide */
+    transform-origin: center bottom; 
+}
+
+/* ... (.flip-inner et .flipped restent identiques) ... */
+.flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+    border-radius: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+.flip-container.flipped .flip-inner { transform: rotateY(180deg); }
+
+
+/* Style commun Recto / Verso */
+.flip-front, .flip-back {
+    /* ... (reste identique) ... */
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 30px;
+    padding: 40px 30px; /* Un peu plus d'espace */
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flip-front { z-index: 2; }
+
+
+/* --- NOUVEAU DESIGN DU VERSO (Back) --- */
+.flip-back {
+    transform: rotateY(180deg);
+    background: #ffffff; /* Fond blanc propre comme le recto */
+    /* On centre le contenu verticalement */
+    justify-content: center; 
+}
+
+.flip-back h3 {
+    font-family: var(--font-main);
+    font-size: 1.4em;
+    color: var(--accent-color); /* Couleur d'accentuation pour le titre */
+    margin-bottom: 5px;
+}
+
+.flip-back p {
+    font-weight: 500;
+    color: #999;
+    margin-bottom: 25px;
+}
+
+/* Nouvelle grille et boutons */
+.vote-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+}
+
+
+/* Bouton de vote (État normal) */
+.vote-btn {
+    background: #f4f6f8; 
+    border: none;
+    padding: 15px 10px;
+    border-radius: 50px;
+    font-family: var(--font-main);
+    font-weight: 700;
+    font-size: 0.95em;
+    color: var(--text-color);
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    transition: all 0.2s ease;
+}
+
+/* État "Appuyé" ou "Sélectionné" (Reste rouge) */
+.vote-btn:active, .vote-btn.selected {
+    background: var(--accent-color);
+    color: white;
+    transform: scale(0.95) translateY(2px);
+    box-shadow: none;
+}
+
+/* --- ANIMATION DE SORTIE CORRIGÉE --- */
+
+/* Classe ajoutée en JS quand on clique sur un nom */
+.card-exit {
+    /* On ralentit l'animation à 0.8s (C'était 0.5s) */
+    animation: slideOutUp 0.8s forwards cubic-bezier(0.4, 0.0, 0.2, 1);
+    pointer-events: none; 
+}
+
+@keyframes slideOutUp {
+    0% {
+        opacity: 1;
+        /* CORRECTION : On ne force plus la rotation ici, on laisse l'état actuel */
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        /* La carte part juste vers le haut en rétrécissant */
+        transform: translateY(-150px) scale(0.85); 
+    }
 }

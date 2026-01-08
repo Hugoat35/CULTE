@@ -1,94 +1,110 @@
-// Importation des sous-jeux
-import NeverGame from './cards/never/logic.js';
-import LikelyGame from './cards/likely/logic.js';
-import MiscGame from './cards/misc/logic.js';
-import VirusGame from './cards/virus/logic.js';
+import activeGames from './cards/index.js';
 
 export default class RituelGame {
     constructor(players, container) {
         this.players = players;
         this.container = container;
         this.deck = [];
-        this.currentIndex = 0;
+        this.lastCardIndex = -1;
+        
+        // NOUVEAU : On prépare le stockage des votes
+        this.voteCounts = {};
     }
 
     start() {
-        // 1. Activer le mode paysage forcé
-        this.container.classList.add('force-landscape');
+        this.container.className = 'rituel-zone';
         
-        // 2. Construire le paquet de cartes
-        this.buildDeck();
-        
-        // 3. Afficher la première carte
-        this.showCurrentCard();
+        // 1. Initialisation : Tout le monde commence à 0 vote
+        this.players.forEach(name => {
+            this.voteCounts[name] = 0;
+        });
 
-        // 4. Ajouter l'événement "Tap to next" sur tout le conteneur
-        // On utilise bind(this) pour garder le contexte
-        this.handleClick = this.nextCard.bind(this);
-        this.container.addEventListener('click', this.handleClick);
+        // Fonction intermédiaire pour gérer l'animation et le comptage
+        const animateAndNext = (btnElement) => {
+            
+            if (btnElement) {
+                // A. On met le bouton en rouge
+                btnElement.classList.add('selected');
+
+                // B. COMPTAGE DES VOTES (Discret)
+                const votedName = btnElement.innerText; // On lit le nom sur le bouton
+                if (this.voteCounts[votedName] !== undefined) {
+                    this.voteCounts[votedName]++;
+                    
+                    // (Optionnel) Pour voir que ça marche dans la console du navigateur :
+                    console.log(`Vote pour ${votedName}. Total: ${this.voteCounts[votedName]}`);
+                }
+            }
+
+            const currentCardEl = document.getElementById('current-card');
+            
+            // 2. Pause lecture (800ms)
+            setTimeout(() => {
+                if (currentCardEl) {
+                    // 3. Animation Sortie
+                    currentCardEl.classList.add('card-exit');
+                    
+                    // 4. Changement de carte (après l'anim CSS de 0.8s)
+                    setTimeout(() => {
+                        this.nextCard();
+                    }, 750); 
+                    
+                } else {
+                    this.nextCard();
+                }
+            }, 800); 
+        };
+
+        // Connexion à la fonction globale
+        window.nextRituelCard = (btn) => animateAndNext(btn);
+
+        this.buildDeck();
+        this.nextCard();
+
+        // Gestion du Flip
+        this.container.addEventListener('click', (e) => {
+            const cardEl = document.getElementById('current-card');
+            if(e.target.tagName === 'BUTTON' || (cardEl && cardEl.classList.contains('card-exit'))) return;
+
+            if (cardEl) {
+                cardEl.classList.toggle('flipped');
+            }
+        });
     }
 
     buildDeck() {
-        // On récupère les cartes générées par chaque sous-module
-        const neverCards = new NeverGame().getCards();
-        const likelyCards = new LikelyGame(this.players).getCards(); // Besoin des joueurs pour "Qui pourrait"
-        const miscCards = new MiscGame(this.players).getCards();
-        const virusCards = new VirusGame().getCards();
-
-        // On fusionne tout
-        this.deck = [
-            ...neverCards,
-            ...likelyCards,
-            ...miscCards,
-            ...virusCards
-        ];
-
-        // Mélange (Fisher-Yates)
-        for (let i = this.deck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
-        }
-    }
-
-    showCurrentCard() {
-        // Si plus de cartes, on finit
-        if (this.currentIndex >= this.deck.length) {
-            this.container.innerHTML = `
-                <div class="rituel-card">
-                    <h1>Fin de la partie !</h1>
-                    <p>Touchez pour quitter</p>
-                </div>
-            `;
-            // Le prochain clic quittera
-            this.currentIndex++; 
-            return;
-        }
-
-        const card = this.deck[this.currentIndex];
-        
-        // On injecte le HTML de la carte
-        this.container.innerHTML = card.html;
-        
-        // On ajoute le petit texte "Tap"
-        this.container.innerHTML += `<div class="tap-hint">Touchez l'écran</div>`;
+        activeGames.forEach(GameClass => {
+            const gameInstance = new GameClass(this.players);
+            this.deck.push(...gameInstance.getCards());
+        });
+        if (this.deck.length === 0) this.deck.push({ html: '<h3>Oups</h3>' });
     }
 
     nextCard() {
-        // Si on a dépassé la fin (écran de fin affiché), on quitte
-        if (this.currentIndex > this.deck.length) {
-            this.cleanup();
-            // On simule le clic sur le bouton quitter global ou on recharge
-            document.getElementById('quit-game-btn').click();
-            return;
-        }
+        if (this.deck.length === 0) return;
+        let randomIndex;
+        if (this.deck.length > 1) {
+            do { randomIndex = Math.floor(Math.random() * this.deck.length); } 
+            while (randomIndex === this.lastCardIndex);
+        } else { randomIndex = 0; }
+        
+        this.lastCardIndex = randomIndex;
+        this.renderCard(this.deck[randomIndex]);
+    }
 
-        this.currentIndex++;
-        this.showCurrentCard();
+    renderCard(card) {
+        this.container.innerHTML = card.html;
+    }
+
+    // Méthode utile pour plus tard (Carte Vengeance)
+    getMostVotedPlayer() {
+        // Retourne le joueur avec le plus de votes
+        return Object.keys(this.voteCounts).reduce((a, b) => 
+            this.voteCounts[a] > this.voteCounts[b] ? a : b
+        );
     }
 
     cleanup() {
-        // IMPORTANT : On retire la rotation quand on quitte
-        this.container.classList.remove('force-landscape');
-        this.container.removeEventListener('click', this.handleClick);
+        delete window.nextRituelCard;
     }
 }
