@@ -1,107 +1,132 @@
+/* modes/rituel/logic.js */
 import activeGames from './cards/index.js';
 
 export default class RituelGame {
     constructor(players, container) {
         this.players = players;
         this.container = container;
-        this.deck = [];
-        this.lastCardIndex = -1;
         
-        // NOUVEAU : On prépare le stockage des votes
+        // On stocke les jeux séparément au lieu de tout mélanger
+        this.subGames = []; 
         this.voteCounts = {};
     }
 
     start() {
         this.container.className = 'rituel-zone';
         
-        // 1. Initialisation : Tout le monde commence à 0 vote
-        this.players.forEach(name => {
-            this.voteCounts[name] = 0;
+        // Initialisation des votes
+        this.players.forEach(name => this.voteCounts[name] = 0);
+
+        // --- Configuration des jeux ---
+        // On prépare chaque jeu séparément
+        activeGames.forEach(config => {
+            const instance = new config.game(this.players);
+            this.subGames.push({
+                weight: config.weight,       // La probabilité (ex: 5)
+                cards: instance.getCards(),  // Les cartes disponibles
+                name: instance.constructor.name
+            });
         });
 
-        // Fonction intermédiaire pour gérer l'animation et le comptage
+        // --- Logique d'Animation & Vote (Reste identique à avant) ---
         const animateAndNext = (btnElement) => {
-            
             if (btnElement) {
-                // A. On met le bouton en rouge
                 btnElement.classList.add('selected');
-
-                // B. COMPTAGE DES VOTES (Discret)
-                const votedName = btnElement.innerText; // On lit le nom sur le bouton
+                const votedName = btnElement.innerText;
                 if (this.voteCounts[votedName] !== undefined) {
                     this.voteCounts[votedName]++;
-                    
-                    // (Optionnel) Pour voir que ça marche dans la console du navigateur :
-                    console.log(`Vote pour ${votedName}. Total: ${this.voteCounts[votedName]}`);
                 }
             }
 
             const currentCardEl = document.getElementById('current-card');
             
-            // 2. Pause lecture (800ms)
+            // Délai de lecture (0.8s)
             setTimeout(() => {
                 if (currentCardEl) {
-                    // 3. Animation Sortie
                     currentCardEl.classList.add('card-exit');
-                    
-                    // 4. Changement de carte (après l'anim CSS de 0.8s)
-                    setTimeout(() => {
-                        this.nextCard();
-                    }, 750); 
-                    
+                    // Délai d'animation (0.75s)
+                    setTimeout(() => this.nextCard(), 750);
                 } else {
                     this.nextCard();
                 }
             }, 800); 
         };
 
-        // Connexion à la fonction globale
         window.nextRituelCard = (btn) => animateAndNext(btn);
 
-        this.buildDeck();
+        // Premier lancement
         this.nextCard();
 
-        // Gestion du Flip
+        // Gestion du clic global (Flip ou Next selon le type de carte)
         this.container.addEventListener('click', (e) => {
-            const cardEl = document.getElementById('current-card');
-            if(e.target.tagName === 'BUTTON' || (cardEl && cardEl.classList.contains('card-exit'))) return;
+            // Si c'est un bouton ou une anim en cours, on touche pas
+            const cardEl = document.getElementById('current-card'); // Carte qui se retourne (Flip)
+            const simpleCard = document.querySelector('.rituel-card:not(.flip-container)'); // Carte simple
 
+            if(e.target.tagName === 'BUTTON' || (cardEl && cardEl.classList.contains('card-exit')) || (simpleCard && simpleCard.classList.contains('card-exit'))) return;
+
+            // CAS 1 : C'est une carte à retourner (Qui pourrait)
             if (cardEl) {
                 cardEl.classList.toggle('flipped');
+            }
+            
+            // CAS 2 : C'est une carte simple (Je n'ai jamais)
+            // Si on clique dessus, ça passe à la suivante directement (avec anim)
+            else if (simpleCard) {
+                simpleCard.classList.add('card-exit');
+                setTimeout(() => this.nextCard(), 750);
             }
         });
     }
 
-    buildDeck() {
-        activeGames.forEach(GameClass => {
-            const gameInstance = new GameClass(this.players);
-            this.deck.push(...gameInstance.getCards());
-        });
-        if (this.deck.length === 0) this.deck.push({ html: '<h3>Oups</h3>' });
-    }
-
+    // --- C'est ICI que la magie des probabilités opère ---
     nextCard() {
-        if (this.deck.length === 0) return;
-        let randomIndex;
-        if (this.deck.length > 1) {
-            do { randomIndex = Math.floor(Math.random() * this.deck.length); } 
-            while (randomIndex === this.lastCardIndex);
-        } else { randomIndex = 0; }
+        // 1. Calculer le poids total (ex: 5 + 5 + 1 = 11)
+        const totalWeight = this.subGames.reduce((sum, g) => sum + g.weight, 0);
         
-        this.lastCardIndex = randomIndex;
-        this.renderCard(this.deck[randomIndex]);
+        // 2. Tirer un nombre aléatoire entre 0 et Total
+        let randomValue = Math.random() * totalWeight;
+        
+        // 3. Trouver quel jeu correspond à ce nombre
+        let selectedGame = null;
+        for (const game of this.subGames) {
+            randomValue -= game.weight;
+            if (randomValue <= 0) {
+                selectedGame = game;
+                break;
+            }
+        }
+
+        // Sécurité
+        if (!selectedGame) selectedGame = this.subGames[0];
+
+        // 4. Piocher une carte au hasard dans ce jeu
+        const randomCardIndex = Math.floor(Math.random() * selectedGame.cards.length);
+        const card = selectedGame.cards[randomCardIndex];
+
+        this.renderCard(card);
     }
 
     renderCard(card) {
-        this.container.innerHTML = card.html;
-    }
+        // 1. On récupère le HTML de la carte
+        let finalHtml = card.html;
 
-    // Méthode utile pour plus tard (Carte Vengeance)
-    getMostVotedPlayer() {
-        // Retourne le joueur avec le plus de votes
-        return Object.keys(this.voteCounts).reduce((a, b) => 
-            this.voteCounts[a] > this.voteCounts[b] ? a : b
-        );
+        // 2. On remplace toutes les occurrences de "{drink}" par une valeur aléatoire
+        // .replace avec une fonction permet de recalculer à chaque fois qu'il trouve le mot
+        finalHtml = finalHtml.replace(/{drink}/g, () => {
+            const rand = Math.random(); // Génère un chiffre entre 0.0 et 1.0
+            
+            if (rand < 0.5) {
+                return "1 pénalité";      // 50% de chance (0.0 à 0.50)
+            } else if (rand < 0.8) {
+                return "2 pénalités";     // 30% de chance (0.50 à 0.80)
+            } else {
+                return "3 pénalités";     // 20% de chance (0.80 à 1.0)
+            }
+        });
+
+        // 3. On injecte le résultat final
+        this.container.innerHTML = finalHtml;
     }
 
     cleanup() {
