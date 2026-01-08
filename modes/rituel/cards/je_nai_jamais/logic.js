@@ -1,31 +1,22 @@
-/* modes/rituel/cards/je_nai_jamais/logic.js */
 import { data } from './data.js';
 
-export default class JeNaiJamaisGame {
-    constructor(players) {
-        this.players = players;
-    }
+// 1. Change le nom de la classe ici (Optionnel mais plus propre)
+export default class EvenementGame { 
+    constructor(players) {}
 
-    getCards() {
-        return data.map(text => {
-            return {
-                type: 'je_nai_jamais',
-                html: `
-                    <div class="rituel-card">
-                        <div class="rituel-category" style="background:#ffebee; color:#e53935;">
-                            Je n'ai jamais
-                        </div>
-                        
-                        <div class="rituel-content">
-                            ${text}
-                        </div>
-                        
-                        <div class="rituel-subtext" style="color:#e53935; font-weight:bold;">
-                            {drink} si vous l'avez fait ! 🍺
-                        </div>
-                    </div>
-                `
-            };
-        });
+    getConfig() {
+        return {
+            mode: 'simple', 
+            theme: {
+                // 2. Change le Titre affiché sur la carte
+                category: "⚠️ ÉVÉNEMENT ⚠️", 
+                
+                // Tu peux garder le style sombre/rouge, ou changer si tu veux :
+                color: "#ff1744", // Rouge
+                bg: "#212121"     // Noir
+            },
+            subtext: "Le sort en est jeté...",
+            data: data
+        };
     }
 }

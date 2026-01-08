@@ -2,29 +2,20 @@ import { data } from './data.js';
 
 export default class DiversGame {
     constructor(players) {
-        this.players = players;
+        // Plus besoin de stocker players ici, on renvoie juste la config
     }
 
-    getCards() {
-        return data.map(text => {
-            return {
-                type: 'divers',
-                html: `
-                    <div class="rituel-card">
-                        <div class="rituel-category" style="background:#fff3e0; color:#f57c00;">
-                            Action / Hasard 🎲
-                        </div>
-                        
-                        <div class="rituel-content">
-                            ${text}
-                        </div>
-                        
-                        <div class="rituel-subtext" style="color:#f57c00; font-weight:600;">
-                            Bonne chance !
-                        </div>
-                    </div>
-                `
-            };
-        });
+    // On remplace getCards() par getConfig()
+    getConfig() {
+        return {
+            mode: 'simple', // Dit au moteur d'utiliser le template simple
+            theme: {
+                category: "Action / Hasard 🎲",
+                color: "#f57c00",
+                bg: "#fff3e0"
+            },
+            subtext: "Bonne chance !",
+            data: data // On passe les données brutes (Strings ou Objets)
+        };
     }
 }

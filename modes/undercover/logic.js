@@ -1,3 +1,4 @@
+/* modes/undercover/logic.js */
 import { words } from './data.js';
 
 export default class UndercoverGame {
@@ -6,30 +7,29 @@ export default class UndercoverGame {
         this.container = container;
         this.container.className = '';
         
-        // --- MODIFICATION : CONFIGURATION AUTOMATIQUE "IDÉALE" ---
-        // Au lieu de mettre 1 et 0 en dur, on calcule selon le nb de joueurs
+        // Configuration par défaut selon le nombre de joueurs
         this.config = this.getIdealConfig(players.length);
         
         this.assignments = [];
         this.currentPlayerIndex = 0;
         this.secretWord = ""; 
+        this.starterPlayer = null; // Stockera celui qui commence le débat
     }
 
-    // --- NOUVELLE MÉTHODE : CALCUL DE L'IDÉAL ---
+    // --- CALCUL DE L'IDÉAL ---
     getIdealConfig(totalPlayers) {
-        // 3-4 joueurs : 1 Undercover
-        if (totalPlayers <= 4) {
+        if (totalPlayers === 3) {
+            return { undercover: 1, mrWhite: 0 }; // 3 joueurs : Pas de Mr White possible
+        }
+        else if (totalPlayers <= 5) {
             return { undercover: 1, mrWhite: 0 };
         } 
-        // 5-6 joueurs : 1 Undercover + 1 Mr. White
         else if (totalPlayers <= 6) {
             return { undercover: 1, mrWhite: 1 };
         } 
-        // 7-8 joueurs : 2 Undercover + 1 Mr. White
         else if (totalPlayers <= 8) {
             return { undercover: 2, mrWhite: 1 };
         } 
-        // 9+ joueurs : 3 Undercover + 1 Mr. White
         else {
             return { undercover: 3, mrWhite: 1 };
         }
@@ -38,7 +38,8 @@ export default class UndercoverGame {
     start() { this.renderSettings(); }
 
     renderSettings() {
-        const maxBadGuys = Math.floor((this.players.length - 1) / 2);
+        // Calcul du max de méchants (la moitié des joueurs - 1 pour garder une majorité)
+        const maxBadGuys = Math.max(1, Math.floor((this.players.length - 1) / 2));
 
         this.container.innerHTML = `
             <h2>Configuration</h2>
@@ -78,6 +79,12 @@ export default class UndercoverGame {
         `;
 
         const updateUI = () => {
+            // SÉCURITÉ 3 JOUEURS DANS L'UI
+            if (this.players.length === 3) {
+                this.config.mrWhite = 0; // On force à 0
+                if(this.config.undercover === 0) this.config.undercover = 1;
+            }
+
             const nbUc = this.config.undercover;
             const nbMw = this.config.mrWhite;
             const totalBad = nbUc + nbMw;
@@ -89,8 +96,17 @@ export default class UndercoverGame {
             document.getElementById('count-civils').innerText = totalCivils;
             document.getElementById('count-baddies').innerText = totalBad;
 
+            // Désactiver les boutons si 3 joueurs
+            if (this.players.length === 3) {
+                 document.getElementById('add-mw').disabled = true;
+                 document.getElementById('add-mw').style.opacity = 0.3;
+            }
+
             const msgEl = document.getElementById('slots-msg');
-            if (slotsLeft === 0) {
+            if (this.players.length === 3) {
+                msgEl.innerText = "À 3 joueurs, Mr. White est désactivé.";
+                msgEl.style.color = "#888";
+            } else if (slotsLeft === 0) {
                 msgEl.innerText = "⚠️ Maximum d'intrus atteint";
                 msgEl.style.color = "#ff9800";
             } else {
@@ -122,6 +138,7 @@ export default class UndercoverGame {
         this.container.querySelector('#sub-uc').onclick = () => { if(this.config.undercover > 0) this.config.undercover--; updateUI(); };
         
         this.container.querySelector('#add-mw').onclick = () => { 
+            if (this.players.length === 3) return; // Bloqué à 3 joueurs
             const total = this.config.undercover + this.config.mrWhite;
             if (total < maxBadGuys) {
                 this.config.mrWhite++;
@@ -137,8 +154,13 @@ export default class UndercoverGame {
     }
 
     setupGame() {
+        // --- 1. SÉCURITÉ FORCEE AVANT LANCEMENT ---
+        if (this.players.length === 3) {
+            this.config.mrWhite = 0;
+            if (this.config.undercover === 0) this.config.undercover = 1;
+        }
+
         const rawPair = words[Math.floor(Math.random() * words.length)];
-        // Coin Flip (Anti-Méta)
         const swap = Math.random() < 0.5;
         
         const wordCivil = swap ? rawPair.undercover : rawPair.civil;
@@ -146,12 +168,14 @@ export default class UndercoverGame {
 
         this.secretWord = wordCivil; 
 
+        // Création des rôles
         let roles = [];
         for(let i=0; i<this.config.undercover; i++) roles.push({ type: 'Undercover', word: wordUndercover });
         for(let i=0; i<this.config.mrWhite; i++) roles.push({ type: 'Mr. White', word: null });
         const nbCivils = this.players.length - roles.length;
         for(let i=0; i<nbCivils; i++) roles.push({ type: 'Civil', word: wordCivil });
 
+        // Mélange
         for (let i = roles.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [roles[i], roles[j]] = [roles[j], roles[i]];
@@ -165,7 +189,19 @@ export default class UndercoverGame {
             originalIndex: index
         }));
 
-        this.currentPlayerIndex = 0;
+        // --- 2. CHOIX DU JOUEUR QUI COMMENCE LE DÉBAT ---
+        // On choisit un joueur au hasard
+        let startIndex = Math.floor(Math.random() * this.assignments.length);
+        
+        // TANT QUE c'est Mr. White, on passe au suivant
+        // (Pour ne pas qu'il commence sans mot)
+        while (this.assignments[startIndex].role === 'Mr. White') {
+            startIndex = (startIndex + 1) % this.assignments.length;
+        }
+        
+        this.starterPlayer = this.assignments[startIndex];
+
+        this.currentPlayerIndex = 0; // Pour le passage du téléphone (0 à N)
         this.showPassPhoneScreen();
     }
 
@@ -211,8 +247,9 @@ export default class UndercoverGame {
 
     showDebatePhase() {
         const alivePlayers = this.assignments.filter(p => p.alive);
-        // Si c'est la première fois qu'on arrive ici (pas de starter défini), on en choisit un
-        if (!this.starterPlayer) {
+        
+        // Si le joueur qui devait commencer est mort (tours suivants), on en prend un autre en vie
+        if (!this.starterPlayer || !this.starterPlayer.alive) {
             this.starterPlayer = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
         }
 
