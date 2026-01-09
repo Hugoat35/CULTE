@@ -12,7 +12,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 /* =========================================
-   2. BASE & LAYOUT (FIX IPHONE)
+   2. BASE & LAYOUT
    ========================================= */
 html {
     height: 100%; width: 100%;
@@ -27,7 +27,7 @@ body {
     color: var(--text-color);
     background: transparent;
     height: 100%; width: 100%;
-    overflow: hidden; /* Empêche le rebond élastique iOS */
+    overflow: hidden; 
     position: fixed;
 }
 
@@ -50,7 +50,7 @@ body {
 .close-game-btn { position: absolute; top: 10px; right: 10px; font-size: 2em; z-index: 50; color: rgba(255,255,255,0.8); }
 
 /* =========================================
-   3. UI COMPONENTS (Boutons, Inputs, Chips)
+   3. UI COMPONENTS
    ========================================= */
 /* Bouton Principal */
 .main-btn {
@@ -86,7 +86,7 @@ body {
 }
 #add-player-btn:active { transform: translateY(-50%) scale(0.9); }
 
-/* Chips Joueurs (Style et Inclinaison) */
+/* Chips Joueurs */
 .player-chip {
     background: white; padding: 10px 18px; border-radius: 50px;
     font-weight: 600; color: #444; font-size: 0.95em;
@@ -94,13 +94,9 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     flex-shrink: 0;
-    
-    /* Préparation rotation */
     transform-origin: center center;
     transition: transform 0.2s;
 }
-
-/* Inclinaison alternée pour effet naturel */
 .player-chip:nth-child(odd) { transform: rotate(-2deg); }
 .player-chip:nth-child(even) { transform: rotate(2deg); }
 .player-chip:active { transform: scale(0.95) rotate(0deg); }
@@ -139,11 +135,11 @@ body {
 .app-title { font-weight: 800; font-size: 3em; letter-spacing: -2px; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .logo-area p { font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8em; opacity: 0.9; }
 
-/* Grille Joueurs Home (Avec espace en haut pour l'inclinaison) */
+/* Grille Joueurs */
 .players-grid {
     display: flex; flex-wrap: wrap; gap: 10px; 
     justify-content: center; align-content: flex-start;
-    padding: 20px 20px 100px 20px; /* 20px en haut pour éviter la coupure */
+    padding: 20px 20px 100px 20px; 
     overflow-y: auto; flex-grow: 1;
 }
 
@@ -176,10 +172,9 @@ body {
 .game-card p { font-size: 0.8em; color: #888; }
 
 /* =========================================
-   5. MASTER GAME CONTAINER (Le Conteneur Unique)
+   5. MASTER GAME CONTAINER
    ========================================= */
 #game-container {
-    /* Layout & Scroll */
     flex-grow: 1; width: 100%;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -187,17 +182,22 @@ body {
     margin-top: 60px;
     max-height: 85vh;
     overflow-y: auto;
-
-    /* Style par défaut (Blanc) */
     background: white;
-    border-radius: 25px; /* Arrondi partout */
+    border-radius: 25px; 
     box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-
-    /* Safe Area Mobile */
     padding-top: max(30px, env(safe-area-inset-top));
     padding-bottom: max(30px, env(safe-area-inset-bottom));
     padding-left: max(30px, env(safe-area-inset-left));
     padding-right: max(30px, env(safe-area-inset-right));
+}
+
+#game-container.rituel-wrapper {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 10px 20px 20px 20px;
+    display: flex; 
+    flex-direction: column;
 }
 
 /* =========================================
@@ -235,33 +235,26 @@ body {
 }
 
 /* =========================================
-   7. RITUEL MODE (Cards & Flip)
+   7. RITUEL MODE (CORRECTION CLIC MOBILE)
    ========================================= */
 
-/* Override Transparent pour le conteneur principal */
-#game-container.rituel-zone {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 20px;
-    perspective: 1000px; /* Vital pour la 3D */
-    justify-content: center;
+.rituel-zone {
+    width: 100%; flex-grow: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    perspective: 1000px;
 }
 
-/* Style commun Cartes (Recto, Verso, Simple) */
+/* Carte Globale */
 .rituel-card, .flip-front, .flip-back {
     background: #ffffff;
     border-radius: 30px;
     padding: 40px 30px;
     width: 100%; max-width: 380px; min-height: 55vh;
-    
     display: flex; flex-direction: column;
     justify-content: space-between; align-items: center; text-align: center;
-    
     box-shadow: 0 20px 40px rgba(0,0,0,0.15);
     position: relative;
-    
-    /* CORRECTIF CLIC MOBILE (Très important) */
     -webkit-user-select: none; user-select: none; cursor: pointer;
 }
 
@@ -284,51 +277,59 @@ body {
 .flip-front, .flip-back {
     position: absolute; width: 100%; height: 100%;
     -webkit-backface-visibility: hidden; backface-visibility: hidden;
-    box-shadow: none; /* L'ombre est gérée par inner */
+    box-shadow: none; 
 }
-.flip-front { z-index: 2; }
+
+/* --- LE FIX POUR LE CLIC SUR TÉLÉPHONE --- */
+/* Par défaut : le dos n'est pas cliquable (pour ne pas interférer avec le front) */
+.flip-front { z-index: 2; pointer-events: auto; }
 .flip-back { 
     transform: rotateY(180deg); 
     background: #ffffff; 
     justify-content: center;
+    z-index: 1;
+    pointer-events: none; /* IMPORTANT : Empêche le clic fantôme */
 }
 
-/* Contenu Carte */
+/* Quand la carte est retournée : on inverse les rôles */
+.flip-container.flipped .flip-front { pointer-events: none; z-index: 1; }
+.flip-container.flipped .flip-back { pointer-events: auto; z-index: 2; }
+
+/* Contenu */
 .rituel-category {
     font-family: var(--font-main); text-transform: uppercase;
     font-size: 0.8em; font-weight: 800; letter-spacing: 2px;
     padding: 10px 20px; border-radius: 50px; margin-bottom: 20px;
     display: inline-block;
-    -webkit-user-select: none; user-select: none; /* Anti-select */
+    pointer-events: none; /* Le texte ne bloque pas le clic */
 }
 .rituel-content {
     font-family: var(--font-main); font-size: 1.8em;
     font-weight: 700; color: var(--text-color);
     line-height: 1.4; margin: 20px 0;
-    -webkit-user-select: none; user-select: none; /* Anti-select */
+    pointer-events: none;
 }
 .rituel-content.long-text { font-size: 1.3em; }
-.rituel-subtext { font-size: 0.9em; color: #999; font-weight: 500; -webkit-user-select: none; user-select: none;}
+.rituel-subtext { font-size: 0.9em; color: #999; font-weight: 500; pointer-events: none;}
 
-/* Virus Spécifique */
-.rituel-virus {
-    border: 3px solid #2e7d32;
-    background: #e8f5e9;
-    box-shadow: 0 0 20px rgba(46, 125, 50, 0.2);
-}
+/* Virus */
+.rituel-virus { border: 3px solid #2e7d32; background: #e8f5e9; box-shadow: 0 0 20px rgba(46, 125, 50, 0.2); }
 
-/* Grille de Vote (Verso) */
-.flip-back h3 { font-size: 1.4em; color: var(--accent-color); margin-bottom: 5px; }
-.flip-back p { font-weight: 500; color: #999; margin-bottom: 25px; }
+/* Grille de Vote */
+.flip-back h3 { font-size: 1.4em; color: var(--accent-color); margin-bottom: 5px; pointer-events: none; }
+.flip-back p { font-weight: 500; color: #999; margin-bottom: 25px; pointer-events: none; }
 .vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+
 .vote-btn {
     background: #f4f6f8; border: none; 
-    padding: 20px 15px; /* Plus d'espace interne (hitbox) */
-    min-height: 60px;   /* Hauteur minimale garantie */
-    border-radius: 50px; font-weight: 700; font-size: 1.1em; /* Texte un peu plus gros */
+    padding: 20px 15px; min-height: 60px;
+    border-radius: 50px; font-weight: 700; font-size: 1.1em;
     color: var(--text-color); cursor: pointer;
     box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: all 0.2s ease;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
+    /* On force le bouton à être cliquable */
+    pointer-events: auto !important; 
+    position: relative; z-index: 10;
 }
 .vote-btn:active, .vote-btn.selected {
     background: var(--accent-color); color: white;
@@ -340,14 +341,11 @@ body {
    ========================================= */
 @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes cardPop { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-/* Sortie de carte */
 .card-exit {
     animation: slideOutUp 0.8s forwards cubic-bezier(0.4, 0.0, 0.2, 1);
     pointer-events: none;
 }
-/* Fix Miroir : stop transition quand ça part */
 .card-exit .flip-inner { transition: none !important; }
 
 @keyframes slideOutUp {
@@ -355,7 +353,6 @@ body {
     100% { opacity: 0; transform: translateY(-150px) scale(0.85); }
 }
 
-/* Cacher Scrollbars (Clean UI) */
 .players-grid::-webkit-scrollbar,
 .elimination-list::-webkit-scrollbar,
 .games-grid::-webkit-scrollbar,
@@ -373,135 +370,45 @@ body {
     pointer-events: none; z-index: 9999; font-family: monospace;
 }
 
-/* --- FIX FINAL POUR LES CARTES QUI BLOQUENT --- */
-
-/* On désactive les événements de souris sur TOUT le contenu textuel */
-/* Le clic passera "au travers" et touchera la carte en dessous */
-.rituel-content, 
-.rituel-content span, 
-.rituel-content strong,
-.rituel-category, 
-.rituel-subtext {
-    pointer-events: none !important;
-}
-
-/* Par sécurité, on s'assure que le conteneur de flip gère le clic */
-.flip-container, .flip-inner, .flip-front, .flip-back {
-    pointer-events: auto;
-}
-
 /* =========================================
-   9. FIXES & NOUVEAUTÉS (Virus Bar)
+   9. SCROLL HORIZONTAL (Virus)
    ========================================= */
-
-/* CORRECTION HITBOX BOUTONS */
-.vote-btn {
-    background: #f4f6f8; border: none; 
-    padding: 20px 15px; /* Plus grand */
-    min-height: 60px;
-    border-radius: 50px; font-weight: 700; font-size: 1.1em;
-    color: var(--text-color); cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: all 0.2s ease;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-
-/* CORRECTION 3D RITUEL (Cible la classe, pas l'ID parent) */
-/* Remplace l'ancien "#game-container.rituel-zone" par ceci : */
-.rituel-zone {
-    width: 100%;
-    flex-grow: 1;
-    display: flex; 
-    flex-direction: column;
-    align-items: center; 
-    justify-content: center;
-    perspective: 1000px;
-    /* Plus de background transparent ici, c'est géré par le wrapper */
-}
-
-/* CONTAINER PRINCIPAL DU JEU */
-#game-container.rituel-wrapper {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 10px 20px 20px 20px; /* Un peu moins de padding haut */
-    display: flex; 
-    flex-direction: column;
-}
-
-/* =========================================
-   MISE À JOUR SCROLL HORIZONTAL (Virus)
-   ========================================= */
-
-/* BARRE DE VIRUS (Top Bar) */
 #virus-area {
-    width: 100%;
-    margin-bottom: 15px;
-    z-index: 100;
-    animation: fadeIn 0.3s ease;
-    flex-shrink: 0;
-    overflow: hidden; /* Empêche le débordement vertical */
+    width: 100%; margin-bottom: 15px; z-index: 100;
+    animation: fadeIn 0.3s ease; flex-shrink: 0; overflow: hidden;
 }
-
 #virus-area.hidden { display: none; }
 
 .virus-scroller {
-    display: flex;
-    flex-wrap: nowrap; /* Force l'alignement sur une ligne */
-    gap: 10px;
-    overflow-x: auto; /* Active le scroll horizontal */
-    padding: 5px 5px 10px 5px; /* Un peu d'espace pour l'ombre */
-    width: 100%;
-    
-    /* Scroll fluide sur mobile (iOS) */
+    display: flex; flex-wrap: nowrap; gap: 10px;
+    overflow-x: auto; padding: 5px 5px 10px 5px; width: 100%;
     -webkit-overflow-scrolling: touch;
-    
-    /* Cache la barre de défilement (esthétique) */
-    -ms-overflow-style: none; 
-    scrollbar-width: none; 
+    -ms-overflow-style: none; scrollbar-width: none; 
 }
 .virus-scroller::-webkit-scrollbar { display: none; }
 
 .virus-badge {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(5px);
-    border: 1px solid #2e7d32;
-    color: #2e7d32;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 0.8em;
-    font-weight: 700;
-    display: flex; 
-    align-items: center; 
-    gap: 8px;
-    white-space: nowrap; /* Empêche le texte de passer à la ligne */
-    
-    /* LE PLUS IMPORTANT : Empêche le badge de rétrécir */
-    flex-shrink: 0; 
-    
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
+    border: 1px solid #2e7d32; color: #2e7d32;
+    padding: 8px 15px; border-radius: 20px;
+    font-size: 0.8em; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+    white-space: nowrap; flex-shrink: 0; 
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    cursor: pointer;
-    transition: transform 0.1s;
+    cursor: pointer; transition: transform 0.1s;
 }
-
-.virus-badge:active {
-    transform: scale(0.95);
-}
-
+.virus-badge:active { transform: scale(0.95); }
 .virus-icon { font-size: 1.2em; }
 
 /* =========================================
    10. EFFETS SPÉCIAUX (SPLIT GAME)
    ========================================= */
-
-/* Secousse : Uniquement pour la double trahison */
 @keyframes shakeCard {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
     20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
-
 .effect-shake {
     animation: shakeCard 0.5s ease-in-out;
-    border: 3px solid #b71c1c !important; /* Bordure rouge pour marquer le coup */
+    border: 3px solid #b71c1c !important; 
 }

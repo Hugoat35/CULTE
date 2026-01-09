@@ -36,7 +36,7 @@ export default class RituelGame {
 
         this.buildDeck();
 
-        // GESTIONNAIRE DE TRANSITION HARMONISÉ
+        // GESTIONNAIRE DE TRANSITION
         const animateAndNext = (btnElement, isInstant = false) => {
             if (navigator.vibrate) navigator.vibrate(20); 
 
@@ -51,18 +51,15 @@ export default class RituelGame {
             
             const currentCardEl = document.getElementById('current-card') || this.container.querySelector('.rituel-card');
             
+            // Si c'est un mini-jeu (instant), pas de délai. Sinon (vote), on attend un peu pour voir le choix.
             const delayBeforeAnimation = isInstant ? 0 : 800; 
             const animationExitDuration = 750; 
 
             const performTransition = () => {
                 if (currentCardEl) {
-                    // --- CORRECTION BUG ANIMATION ---
-                    // On retire l'effet de tremblement (ou tout autre effet) 
-                    // pour laisser la place à l'animation de sortie
+                    // Nettoyage des effets (shake) pour que l'anim de sortie fonctionne
                     currentCardEl.classList.remove('effect-shake'); 
-                    
-                    // Petite astuce pour forcer le navigateur à recalculer le style (Reflow)
-                    void currentCardEl.offsetWidth; 
+                    void currentCardEl.offsetWidth; // Force Reflow
 
                     currentCardEl.classList.add('card-exit');
                     currentCardEl.style.animationDuration = '0.8s';
@@ -80,7 +77,12 @@ export default class RituelGame {
             }
         };
         
+        // --- EXPOSITION DES FONCTIONS GLOBALES ---
+        // 1. Pour les mini-jeux (Instant)
         window.nextRituelCard = (btn) => animateAndNext(btn, true);
+        
+        // 2. Pour les votes "Qui pourrait" (Avec délai) <- C'ETAIT CA QUI MANQUAIT
+        window.voteRituelCard = (btn) => animateAndNext(btn, false);
 
         window.showVirusDetail = (virusId) => {
             const virus = this.activeViruses.find(v => v.id == virusId);
@@ -336,7 +338,8 @@ export default class RituelGame {
         const theme = config.theme;
         if (config.mode === 'flip') {
             const playersHtml = this.players.map(p => 
-                `<button class="vote-btn" onclick="event.stopPropagation(); animateAndNext(this, false)">${p}</button>`
+                // CORRECTION ICI : Appel de window.voteRituelCard
+                `<button class="vote-btn" onclick="event.stopPropagation(); window.voteRituelCard(this)">${p}</button>`
             ).join('');
             return `
                 <div class="flip-container" id="current-card">
@@ -382,7 +385,6 @@ export default class RituelGame {
             if (cardEl) {
                 cardEl.classList.toggle('flipped');
             } else if (simpleCard) {
-                // Petite correction ici : on s'assure de nettoyer aussi les effets si on clique directement sur la carte
                 simpleCard.classList.remove('effect-shake'); 
                 void simpleCard.offsetWidth;
 
@@ -394,6 +396,7 @@ export default class RituelGame {
     
     cleanup() { 
         delete window.nextRituelCard; 
+        delete window.voteRituelCard; // Nettoyage
         delete window.showVirusDetail; 
     }
 }
