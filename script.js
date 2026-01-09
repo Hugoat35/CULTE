@@ -18,7 +18,7 @@ const btnAdd = document.getElementById('add-player-btn');
 const btnToGames = document.getElementById('to-games-btn');
 const gameContainer = document.getElementById('game-container');
 
-// --- UTILITAIRES MODALE (Nouveau) ---
+// --- UTILITAIRES MODALE ---
 const modal = {
     overlay: document.getElementById('custom-modal'),
     title: document.getElementById('modal-title'),
@@ -28,6 +28,7 @@ const modal = {
 };
 
 // Fonction pour afficher une belle popup
+// MODIF : Gestion intelligente des boutons
 window.showCustomModal = (title, message, onConfirm) => {
     modal.title.innerText = title;
     modal.msg.innerText = message;
@@ -36,21 +37,34 @@ window.showCustomModal = (title, message, onConfirm) => {
     modal.overlay.classList.remove('hidden');
     requestAnimationFrame(() => modal.overlay.classList.add('active'));
 
-    // Gestion du bouton Confirmer (Nettoyage des anciens événements via cloneNode)
+    // Reset des boutons (clonage pour retirer les listeners précédents)
     const newBtnConfirm = modal.btnConfirm.cloneNode(true);
     modal.btnConfirm.replaceWith(newBtnConfirm);
     modal.btnConfirm = newBtnConfirm;
 
-    // Gestion du bouton Annuler
     const newBtnCancel = modal.btnCancel.cloneNode(true);
     modal.btnCancel.replaceWith(newBtnCancel);
     modal.btnCancel = newBtnCancel;
 
-    // Assigner les actions
-    modal.btnConfirm.addEventListener('click', () => {
-        closeModal();
-        if (onConfirm) onConfirm();
-    });
+    // --- LOGIQUE BOUTONS ---
+    if (onConfirm) {
+        // Cas : CONFIRMATION (On veut deux boutons)
+        modal.btnCancel.style.display = 'block';
+        modal.btnConfirm.innerText = "Confirmer";
+        
+        modal.btnConfirm.addEventListener('click', () => {
+            closeModal();
+            onConfirm();
+        });
+    } else {
+        // Cas : INFO SEULE (Un seul bouton)
+        modal.btnCancel.style.display = 'none'; // On cache annuler
+        modal.btnConfirm.innerText = "C'est compris"; // Texte plus sympa
+        
+        modal.btnConfirm.addEventListener('click', closeModal);
+    }
+
+    // Le bouton annuler ferme toujours
     modal.btnCancel.addEventListener('click', closeModal);
 };
 
@@ -170,12 +184,11 @@ document.querySelectorAll('.game-card').forEach(card => {
     card.addEventListener('click', async () => {
         const gameName = card.dataset.game;
 
-        // MODIF: Alerte personnalisée si pas assez de joueurs
         if (gameName === 'undercover' && state.players.length < 3) {
             window.showCustomModal(
                 "Pas assez de joueurs",
                 "Il faut être au moins 3 pour jouer à Undercover !",
-                null // Pas d'action spécifique
+                null 
             );
             return;
         }
@@ -190,7 +203,7 @@ document.querySelectorAll('.game-card').forEach(card => {
             state.currentGame.start();
         } catch (err) {
             console.error(err);
-            alert("Erreur chargement du jeu"); // Fallback simple cas d'erreur technique
+            alert("Erreur chargement du jeu"); 
         }
     });
 });

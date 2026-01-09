@@ -1,27 +1,34 @@
 /* modes/rituel/logic.js */
 import activeGames from './cards/index.js';
+import { handleMiniGame } from './cards/jeux/logic.js'; 
 
 export default class RituelGame {
     constructor(players, container) {
         this.players = players;
-        this.container = container;
+        this.mainContainer = container; 
+        this.container = null;          
+        this.virusContainer = null;     
+        
         this.subGames = []; 
         this.voteCounts = {};
         
-        // TEMPOREL
         this.turnCount = 0;       
         this.scheduledCards = {}; 
+        this.activeViruses = []; 
 
-        // SYSTÈME DE POIDS POUR L'ÉQUILIBRAGE
         this.playerWeights = {}; 
     }
 
     start() {
-        this.container.className = 'rituel-zone';
-        
-        // Initialisation :
-        // 1. Votes à 0
-        // 2. Poids à 100 pour tout le monde (chance égale au départ)
+        this.mainContainer.className = 'rituel-wrapper';
+        this.mainContainer.innerHTML = `
+            <div id="virus-area" class="hidden"></div>
+            <div id="rituel-play-area" class="rituel-zone"></div>
+        `;
+
+        this.virusContainer = this.mainContainer.querySelector('#virus-area');
+        this.container = this.mainContainer.querySelector('#rituel-play-area');
+
         this.players.forEach(name => {
             this.voteCounts[name] = 0;
             this.playerWeights[name] = 100;
@@ -29,28 +36,59 @@ export default class RituelGame {
 
         this.buildDeck();
 
-        // Gestionnaire d'animation & Vote
-        const animateAndNext = (btnElement) => {
-            // 1. VIBRATION "TIC" (Haptique léger lors du vote)
+        // GESTIONNAIRE DE TRANSITION HARMONISÉ (Vitesse identique, réactivité accrue)
+        const animateAndNext = (btnElement, isInstant = false) => {
             if (navigator.vibrate) navigator.vibrate(20); 
 
             if (btnElement) {
-                btnElement.classList.add('selected');
-                const votedName = btnElement.innerText;
-                if (this.voteCounts[votedName] !== undefined) this.voteCounts[votedName]++;
+                const btn = btnElement.closest('button');
+                if (btn) {
+                    btn.classList.add('selected');
+                    const votedName = btn.innerText;
+                    if (this.voteCounts[votedName] !== undefined) this.voteCounts[votedName]++;
+                }
             }
-            const currentCardEl = document.getElementById('current-card');
-            setTimeout(() => {
+            
+            // Recherche de la carte (par ID ou par classe par sécurité)
+            const currentCardEl = document.getElementById('current-card') || this.container.querySelector('.rituel-card');
+            
+            // RÉGLAGES DE TEMPS
+            // delayBeforeAnimation : 0ms pour les jeux (instantané), 800ms pour les votes (laisser lire le choix)
+            const delayBeforeAnimation = isInstant ? 0 : 800; 
+            // animationExitDuration : 750ms correspond au temps de l'animation CSS card-exit
+            const animationExitDuration = 750; 
+
+            const performTransition = () => {
                 if (currentCardEl) {
                     currentCardEl.classList.add('card-exit');
-                    setTimeout(() => this.nextCard(), 750);
+                    // On s'assure que la durée CSS est bien synchronisée sur 0.75s ou 0.8s
+                    currentCardEl.style.animationDuration = '0.8s';
+                    
+                    setTimeout(() => this.nextCard(), animationExitDuration);
                 } else {
                     this.nextCard();
                 }
-            }, 800); 
+            };
+
+            if (delayBeforeAnimation === 0) {
+                performTransition();
+            } else {
+                setTimeout(performTransition, delayBeforeAnimation);
+            }
         };
         
-        window.nextRituelCard = (btn) => animateAndNext(btn);
+        // On expose la fonction pour les mini-jeux. 
+        // Le paramètre "true" assure que la carte s'envole dès le clic.
+        window.nextRituelCard = (btn) => animateAndNext(btn, true);
+
+        window.showVirusDetail = (virusId) => {
+            const virus = this.activeViruses.find(v => v.id == virusId);
+            if (virus) {
+                let cleanMsg = virus.fullText.replace(/<[^>]*>?/gm, '');
+                cleanMsg = this.injectDrink(cleanMsg);
+                window.showCustomModal("Rappel du Virus 🦠", cleanMsg, null);
+            }
+        };
 
         this.nextCard();
         this.attachGlobalListeners();
@@ -60,12 +98,19 @@ export default class RituelGame {
         activeGames.forEach(gameConfig => {
             const instance = new gameConfig.game(this.players);
             const config = instance.getConfig(); 
-            const processedCards = config.data.map(item => {
+            const cleanData = config.data.filter(item => item);
+
+            const processedCards = cleanData.map(item => {
                 if(config.mode === 'virus') return { ...item, _config: config };
+                if(config.mode === 'minijeu') return { rawText: item, _config: config };
+                
                 const { text, options } = this.normalizeItem(item);
                 return { options: options, rawText: text, _config: config };
             });
-            this.subGames.push({ weight: gameConfig.weight, cards: processedCards, name: instance.constructor.name });
+            
+            if (processedCards.length > 0) {
+                this.subGames.push({ weight: gameConfig.weight, cards: processedCards, name: instance.constructor.name });
+            }
         });
     }
 
@@ -77,17 +122,20 @@ export default class RituelGame {
     nextCard() {
         this.turnCount++;
 
-        // 1. Carte programmée (Fin de virus)
         if (this.scheduledCards[this.turnCount]) {
-            const plannedCardHtml = this.scheduledCards[this.turnCount];
+            const item = this.scheduledCards[this.turnCount];
             delete this.scheduledCards[this.turnCount];
-            this.container.innerHTML = plannedCardHtml;
-            // Vérif taille texte après injection
+            
+            if (typeof item === 'object' && item.html) {
+                this.container.innerHTML = item.html;
+                if (item.onStart) item.onStart(); 
+            } else {
+                this.container.innerHTML = item; 
+            }
             this.adjustTextSize();
             return;
         }
 
-        // 2. Tirage du jeu
         const totalWeight = this.subGames.reduce((sum, g) => sum + g.weight, 0);
         let randomValue = Math.random() * totalWeight;
         let selectedGame = null;
@@ -100,140 +148,36 @@ export default class RituelGame {
         const randomCardIndex = Math.floor(Math.random() * selectedGame.cards.length);
         const cardData = selectedGame.cards[randomCardIndex];
 
-        // 3. Gestion Virus ou Normal
         if (cardData._config.mode === 'virus') {
             this.handleVirusCard(cardData);
-        } else {
+        } 
+        else if (cardData._config.mode === 'minijeu') {
+            handleMiniGame(this, cardData);
+        } 
+        else {
             const html = this.generateHtml(cardData.rawText, cardData._config);
             const finalHtml = this.injectVariables(html, cardData.options);
             this.container.innerHTML = finalHtml;
-            
-            // AJOUT : On vérifie la taille du texte
             this.adjustTextSize();
         }
     }
 
-    // --- LE CŒUR DE L'ÉQUILIBRAGE ---
-    
-    getBalancedPlayers(count) {
-        // 1. SÉCURITÉ : On ne prend pas plus de joueurs qu'il n'y en a réellement
-        const realCount = Math.min(count, this.players.length);
-
-        let selectedPlayers = [];
-        
-        // Copie temporaire des poids pour ce tirage
-        let tempWeights = { ...this.playerWeights };
-
-        // 2. BOUCLE DE SÉLECTION
-        for (let i = 0; i < realCount; i++) {
-            
-            // A. Calcul du poids total
-            let totalWeight = 0;
-            const candidates = this.players.filter(p => !selectedPlayers.includes(p)); 
-            
-            candidates.forEach(p => totalWeight += tempWeights[p]);
-
-            // B. Tirage pondéré
-            let random = Math.random() * totalWeight;
-            let chosen = null;
-            
-            for (const player of candidates) {
-                random -= tempWeights[player];
-                if (random <= 0) {
-                    chosen = player;
-                    break;
-                }
-            }
-            
-            if (!chosen) chosen = candidates[0];
-            selectedPlayers.push(chosen);
-        }
-
-        // 3. MISE À JOUR DES VRAIS POIDS
-        this.players.forEach(p => {
-            if (selectedPlayers.includes(p)) {
-                // Reset à 40 pour laisser une chance de "Double Tap"
-                this.playerWeights[p] = 40; 
-            } else {
-                // Les autres montent (+15)
-                this.playerWeights[p] = Math.min(200, this.playerWeights[p] + 15);
-            }
-        });
-
-        return selectedPlayers;
-    }
-
-    // --- OUTILS ---
-
-    processVirusTexts(startStr, endStr) {
-        const selectedPlayers = this.getBalancedPlayers(3); // Prend jusqu'à 3 joueurs équilibrés
-        
-        const replaceP = (str) => {
-            return str.replace(/{p(\d+)}/g, (match, number) => {
-                const index = parseInt(number) - 1;
-                return selectedPlayers[index] ? `<span style="font-weight:800; color:var(--accent-color)">${selectedPlayers[index]}</span>` : "Quelqu'un";
-            });
-        };
-
-        return {
-            startText: replaceP(startStr),
-            endText: replaceP(endStr)
-        };
-    }
-
-    injectVariables(html, options) {
-        let finalHtml = html;
-        const selectedPlayers = this.getBalancedPlayers(3);
-
-        // 1. Remplacement Joueurs {p1}, {p2}...
-        finalHtml = finalHtml.replace(/{p(\d+)}/g, (match, number) => {
-            const index = parseInt(number) - 1;
-            return selectedPlayers[index] ? `<span style="font-weight:800; color:var(--accent-color)">${selectedPlayers[index]}</span>` : "Quelqu'un";
-        });
-
-        // 2. Remplacement Options {opt}
-        if (options && options.length > 0) {
-            finalHtml = finalHtml.replace(/{opt}/g, () => {
-                const randomOption = options[Math.floor(Math.random() * options.length)];
-                return `<span style="text-decoration:underline; text-decoration-color:var(--accent-color);">${randomOption}</span>`;
-            });
-        }
-
-        // 3. Remplacement HARDCORE {loser} (Le plus voté)
-        finalHtml = finalHtml.replace(/{loser}/g, () => {
-            // On cherche le max de votes
-            let maxVotes = -1;
-            let losers = [];
-
-            for (const [name, count] of Object.entries(this.voteCounts)) {
-                if (count > maxVotes) {
-                    maxVotes = count;
-                    losers = [name]; // Nouveau record
-                } else if (count === maxVotes) {
-                    losers.push(name); // Égalité
-                }
-            }
-
-            // Si personne n'a de vote (début de partie), on prend un joueur au hasard
-            if (maxVotes <= 0) {
-                const randomPlayer = this.players[Math.floor(Math.random() * this.players.length)];
-                return `<span style="font-weight:800; color:#ff1744">${randomPlayer}</span>`;
-            }
-
-            // S'il y a des ex-aequo, on en tire un au sort
-            const ultimateLoser = losers[Math.floor(Math.random() * losers.length)];
-            return `<span style="font-weight:800; color:#ff1744; text-transform:uppercase;">${ultimateLoser}</span>`;
-        });
-        
-        return this.injectDrink(finalHtml);
-    }
-    
     handleVirusCard(virusData) {
-        // 1. VIBRATION ALERTE (Brrr - pause - Brrr)
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         
         const config = virusData._config;
         const { startText, endText } = this.processVirusTexts(virusData.start, virusData.end);
+
+        const virusId = Date.now() + Math.random(); 
+        const cleanText = startText.replace(/<[^>]*>?/gm, ''); 
+        const shortDesc = cleanText.length > 35 ? cleanText.substring(0, 32) + "..." : cleanText;
+
+        this.activeViruses.push({
+            id: virusId,
+            text: shortDesc,
+            fullText: startText 
+        });
+        this.updateVirusBar();
 
         let startHtml = `
             <div class="rituel-card rituel-virus">
@@ -245,11 +189,13 @@ export default class RituelGame {
             </div>
         `;
         startHtml = this.injectDrink(startHtml);
+        this.container.innerHTML = startHtml;
+        this.adjustTextSize();
 
         const min = virusData.duration[0];
         const max = virusData.duration[1];
         const duration = Math.floor(Math.random() * (max - min + 1)) + min;
-        const targetTurn = this.turnCount + duration;
+        let targetTurn = this.turnCount + duration;
 
         let endHtml = `
             <div class="rituel-card" style="border: 2px dashed ${config.theme.color}">
@@ -262,14 +208,112 @@ export default class RituelGame {
         `;
         
         while(this.scheduledCards[targetTurn]) targetTurn++;
-        this.scheduledCards[targetTurn] = endHtml;
-        
-        this.container.innerHTML = startHtml;
-        
-        // Vérif taille texte
-        this.adjustTextSize();
+
+        this.scheduledCards[targetTurn] = {
+            html: endHtml,
+            onStart: () => {
+                this.activeViruses = this.activeViruses.filter(v => v.id !== virusId);
+                this.updateVirusBar();
+            }
+        };
     }
 
+    updateVirusBar() {
+        if (this.activeViruses.length === 0) {
+            this.virusContainer.classList.add('hidden');
+            this.virusContainer.innerHTML = '';
+            return;
+        }
+
+        this.virusContainer.classList.remove('hidden');
+        const badgesHtml = this.activeViruses.map(v => `
+            <div class="virus-badge" onclick="window.showVirusDetail(${v.id})">
+                <span class="virus-icon">☣️</span>
+                <span class="virus-desc">${v.text}</span>
+            </div>
+        `).join('');
+
+        this.virusContainer.innerHTML = `<div class="virus-scroller">${badgesHtml}</div>`;
+        
+        const scroller = this.virusContainer.querySelector('.virus-scroller');
+        if (scroller) {
+            scroller.addEventListener('wheel', (evt) => {
+                evt.preventDefault();
+                scroller.scrollLeft += evt.deltaY;
+            });
+        }
+    }
+    
+    getBalancedPlayers(count) {
+        const realCount = Math.min(count, this.players.length);
+        let selectedPlayers = [];
+        let tempWeights = { ...this.playerWeights };
+
+        for (let i = 0; i < realCount; i++) {
+            let totalWeight = 0;
+            const candidates = this.players.filter(p => !selectedPlayers.includes(p)); 
+            candidates.forEach(p => totalWeight += tempWeights[p]);
+
+            let random = Math.random() * totalWeight;
+            let chosen = null;
+            for (const player of candidates) {
+                random -= tempWeights[player];
+                if (random <= 0) { chosen = player; break; }
+            }
+            if (!chosen) chosen = candidates[0];
+            selectedPlayers.push(chosen);
+        }
+
+        this.players.forEach(p => {
+            if (selectedPlayers.includes(p)) this.playerWeights[p] = 40; 
+            else this.playerWeights[p] = Math.min(200, this.playerWeights[p] + 15);
+        });
+
+        return selectedPlayers;
+    }
+
+    processVirusTexts(startStr, endStr) {
+        const selectedPlayers = this.getBalancedPlayers(3); 
+        const replaceP = (str) => {
+            return str.replace(/{p(\d+)}/g, (match, number) => {
+                const index = parseInt(number) - 1;
+                return selectedPlayers[index] ? `<span style="font-weight:800; color:var(--accent-color)">${selectedPlayers[index]}</span>` : "Quelqu'un";
+            });
+        };
+        return { startText: replaceP(startStr), endText: replaceP(endStr) };
+    }
+
+    injectVariables(html, options) {
+        let finalHtml = html;
+        const selectedPlayers = this.getBalancedPlayers(3);
+
+        finalHtml = finalHtml.replace(/{p(\d+)}/g, (match, number) => {
+            const index = parseInt(number) - 1;
+            return selectedPlayers[index] ? `<span style="font-weight:800; color:var(--accent-color)">${selectedPlayers[index]}</span>` : "Quelqu'un";
+        });
+
+        if (options && options.length > 0) {
+            finalHtml = finalHtml.replace(/{opt}/g, () => {
+                const randomOption = options[Math.floor(Math.random() * options.length)];
+                return `<span style="text-decoration:underline; text-decoration-color:var(--accent-color);">${randomOption}</span>`;
+            });
+        }
+
+        finalHtml = finalHtml.replace(/{loser}/g, () => {
+            let maxVotes = -1;
+            let losers = [];
+            for (const [name, count] of Object.entries(this.voteCounts)) {
+                if (count > maxVotes) { maxVotes = count; losers = [name]; } 
+                else if (count === maxVotes) { losers.push(name); }
+            }
+            if (maxVotes <= 0) return `<span style="font-weight:800; color:#ff1744">${this.players[Math.floor(Math.random() * this.players.length)]}</span>`;
+            const ultimateLoser = losers[Math.floor(Math.random() * losers.length)];
+            return `<span style="font-weight:800; color:#ff1744; text-transform:uppercase;">${ultimateLoser}</span>`;
+        });
+        
+        return this.injectDrink(finalHtml);
+    }
+    
     injectDrink(html) {
         return html.replace(/{drink}/g, () => {
             const rand = Math.random(); 
@@ -279,16 +323,11 @@ export default class RituelGame {
         });
     }
 
-    // NOUVEAU : Ajuste la taille si le texte est trop long
     adjustTextSize() {
         const contentDiv = this.container.querySelector('.rituel-content');
         if (contentDiv) {
-            // On compte le nombre de caractères (texte pur)
             const textLength = contentDiv.textContent.length;
-            // Si + de 85 caractères, on ajoute la classe CSS .long-text
-            if (textLength > 85) {
-                contentDiv.classList.add('long-text');
-            }
+            if (textLength > 85) contentDiv.classList.add('long-text');
         }
     }
 
@@ -296,7 +335,7 @@ export default class RituelGame {
         const theme = config.theme;
         if (config.mode === 'flip') {
             const playersHtml = this.players.map(p => 
-                `<button class="vote-btn" onclick="event.stopPropagation(); window.nextRituelCard(this)">${p}</button>`
+                `<button class="vote-btn" onclick="event.stopPropagation(); animateAndNext(this, false)">${p}</button>`
             ).join('');
             return `
                 <div class="flip-container" id="current-card">
@@ -335,8 +374,9 @@ export default class RituelGame {
             const cardEl = document.getElementById('current-card');
             const simpleCard = document.querySelector('.rituel-card:not(.flip-container)');
             
-            // Empêche le clic si on touche un bouton ou si l'anim de sortie est en cours
-            if(e.target.tagName === 'BUTTON' || (cardEl && cardEl.classList.contains('card-exit')) || (simpleCard && simpleCard.classList.contains('card-exit'))) return;
+            if(e.target.closest('button') || e.target.closest('#virus-area')) return;
+            
+            if ((cardEl && cardEl.classList.contains('card-exit')) || (simpleCard && simpleCard.classList.contains('card-exit'))) return;
 
             if (cardEl) {
                 cardEl.classList.toggle('flipped');
@@ -346,5 +386,9 @@ export default class RituelGame {
             }
         });
     }
-    cleanup() { delete window.nextRituelCard; }
+    
+    cleanup() { 
+        delete window.nextRituelCard; 
+        delete window.showVirusDetail; 
+    }
 }

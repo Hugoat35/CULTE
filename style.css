@@ -1,5 +1,7 @@
+/* =========================================
+   1. VARIABLES & RESET
+   ========================================= */
 :root {
-    /* Ton gradient existant */
     --bg-gradient: linear-gradient(180deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%);
     --card-bg: #ffffff;
     --text-color: #2d3436;
@@ -9,12 +11,12 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* MODIFICATION IMPORTANTE ICI POUR IPHONE */
+/* =========================================
+   2. BASE & LAYOUT (FIX IPHONE)
+   ========================================= */
 html {
-    height: 100%;
-    width: 100%;
-    /* Le fond est ici pour couvrir tout l'écran, même derrière les barres du navigateur */
-    background: var(--bg-gradient); 
+    height: 100%; width: 100%;
+    background: var(--bg-gradient);
     background-repeat: no-repeat;
     background-size: cover;
     background-attachment: fixed;
@@ -23,34 +25,53 @@ html {
 body {
     font-family: var(--font-main);
     color: var(--text-color);
-    background: transparent; /* Transparent pour laisser voir le html */
-    height: 100%;
-    width: 100%;
-    overflow: hidden; /* Empêche le rebond élastique sur iOS */
+    background: transparent;
+    height: 100%; width: 100%;
+    overflow: hidden; /* Empêche le rebond élastique iOS */
     position: fixed;
-    -webkit-tap-highlight-color: transparent;
 }
 
 #app {
-    max-width: 480px;
+    height: 100%; width: 100%; max-width: 480px;
     margin: 0 auto;
-    padding: 20px;
-    min-height: 100vh;
+    display: flex; flex-direction: column;
     position: relative;
-    padding-bottom: 100px; /* Espace pour le footer fixe */
+    padding-bottom: 0; 
 }
 
-/* --- LOGO --- */
-.logo-area { text-align: center; margin: 40px 0 30px 0; color: white; }
-.app-title { font-weight: 800; font-size: 3em; letter-spacing: -2px; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.logo-area p { font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8em; opacity: 0.9; }
+/* Ecrans */
+.screen { display: none; animation: fadeIn 0.4s ease; height: 100%; flex-direction: column; }
+.screen.active { display: flex; }
 
-/* --- ECRANS --- */
-.screen { display: none; animation: fadeIn 0.4s ease; }
-.screen.active { display: block; } /* Block au lieu de flex pour gérer le grid */
+/* En-tête Navigation */
+.header-nav { display: flex; align-items: center; padding: 20px 20px 0 20px; flex-shrink: 0; }
+.back-btn, .close-game-btn { background: none; border: none; cursor: pointer; color: white; padding: 10px; font-size: 1.2em; }
+.header-nav h2 { color: white; margin-left: 10px; font-size: 1.5em; text-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.close-game-btn { position: absolute; top: 10px; right: 10px; font-size: 2em; z-index: 50; color: rgba(255,255,255,0.8); }
 
-/* --- INPUT --- */
-.input-container { position: relative; margin-bottom: 30px; }
+/* =========================================
+   3. UI COMPONENTS (Boutons, Inputs, Chips)
+   ========================================= */
+/* Bouton Principal */
+.main-btn {
+    width: 100%; padding: 18px; border: none; border-radius: 18px;
+    background: var(--text-color); color: white;
+    font-size: 1.1em; font-weight: 600; font-family: var(--font-main);
+    cursor: pointer; transition: opacity 0.2s;
+}
+.main-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Bouton Secondaire */
+.secondary-btn {
+    width: 100%; padding: 18px;
+    border: 2px solid var(--text-color); background: transparent; color: var(--text-color);
+    border-radius: 18px; font-size: 1.1em; font-weight: 600; font-family: var(--font-main);
+    cursor: pointer; margin-top: 15px; transition: all 0.2s;
+}
+.secondary-btn:hover { background: var(--text-color); color: white; }
+
+/* Input Ajout Joueur */
+.input-container { position: relative; margin: 0 20px 20px 20px; flex-shrink: 0; }
 .input-container input {
     width: 100%; padding: 18px 60px 18px 25px;
     border: none; border-radius: 25px; font-size: 1.1em; outline: none;
@@ -65,97 +86,143 @@ body {
 }
 #add-player-btn:active { transform: translateY(-50%) scale(0.9); }
 
-/* --- JOUEURS (CHIPS) --- */
-.players-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+/* Chips Joueurs (Style et Inclinaison) */
 .player-chip {
     background: white; padding: 10px 18px; border-radius: 50px;
     font-weight: 600; color: #444; font-size: 0.95em;
     display: flex; align-items: center; gap: 10px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    flex-shrink: 0;
+    
+    /* Préparation rotation */
+    transform-origin: center center;
+    transition: transform 0.2s;
 }
+
+/* Inclinaison alternée pour effet naturel */
+.player-chip:nth-child(odd) { transform: rotate(-2deg); }
+.player-chip:nth-child(even) { transform: rotate(2deg); }
+.player-chip:active { transform: scale(0.95) rotate(0deg); }
+
 .player-chip .remove {
     width: 20px; height: 20px; background: #f0f0f0; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; cursor: pointer; color: #aaa;
 }
 
-/* --- FOOTER FIXE --- */
+/* Modale */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
+    z-index: 2000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-box {
+    background: white; width: 85%; max-width: 320px; padding: 25px; border-radius: 25px;
+    text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.modal-overlay.active .modal-box { transform: scale(1); }
+.modal-box h3 { margin-bottom: 10px; color: var(--accent-color); font-size: 1.4em; }
+.modal-box p { margin-bottom: 25px; color: #666; font-size: 0.95em; }
+.modal-buttons { display: flex; gap: 10px; justify-content: center; }
+.modal-btn { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; flex: 1; font-family: var(--font-main);}
+.modal-btn.primary { background: var(--accent-color); color: white; }
+.modal-btn.secondary { background: #f0f0f0; color: #555; }
+
+/* =========================================
+   4. HOME & SELECTION SCREEN
+   ========================================= */
+.logo-area { text-align: center; margin: 40px 0 30px 0; color: white; flex-shrink: 0; }
+.app-title { font-weight: 800; font-size: 3em; letter-spacing: -2px; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.logo-area p { font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8em; opacity: 0.9; }
+
+/* Grille Joueurs Home (Avec espace en haut pour l'inclinaison) */
+.players-grid {
+    display: flex; flex-wrap: wrap; gap: 10px; 
+    justify-content: center; align-content: flex-start;
+    padding: 20px 20px 100px 20px; /* 20px en haut pour éviter la coupure */
+    overflow-y: auto; flex-grow: 1;
+}
+
+/* Footer Home */
 .footer-action {
-    position: fixed; bottom: 0; left: 0; right: 0;
+    position: absolute; bottom: 0; left: 0; right: 0;
     background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
     padding: 20px; text-align: center;
     border-radius: 25px 25px 0 0;
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
-    z-index: 100; max-width: 480px; margin: 0 auto; /* Centrer sur desktop */
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.05); z-index: 100;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 #player-count-label { font-size: 0.8em; color: #888; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; }
-.main-btn {
-    width: 100%; padding: 18px; border: none; border-radius: 18px;
-    background: var(--text-color); color: white;
-    font-size: 1.1em; font-weight: 600; font-family: var(--font-main);
-    cursor: pointer; transition: opacity 0.2s;
-}
-.main-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-/* --- SELECTION JEU --- */
-.header-nav { display: flex; align-items: center; margin-bottom: 20px; }
-.back-btn, .close-game-btn { background: none; border: none; cursor: pointer; color: white; padding: 10px; }
-.header-nav h2 { color: white; margin-left: 10px; font-size: 1.5em; }
-.games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+/* Sélection Jeux */
+.games-grid { 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
+    padding: 20px; overflow-y: auto; flex-grow: 1;
+}
 .game-card {
     background: white; padding: 20px; border-radius: 20px;
     text-align: center; cursor: pointer; transition: transform 0.2s;
     box-shadow: 0 10px 20px rgba(0,0,0,0.05); height: 160px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .game-card:active { transform: scale(0.98); }
-.game-card.disabled { opacity: 0.6; filter: grayscale(1); }
+.game-card.disabled { opacity: 0.6; filter: grayscale(1); pointer-events: none; }
 .icon { font-size: 3em; margin-bottom: 10px; display: block; }
-.game-card h3 { margin-bottom: 5px; color: var(--text-color); }
+.game-card h3 { margin-bottom: 5px; color: var(--text-color); font-size: 1.1em; }
 .game-card p { font-size: 0.8em; color: #888; }
 
-/* --- GAME CONTAINER --- */
-#screen-game { position: relative; height: 100vh; display: flex; flex-direction: column; }
-.close-game-btn {
-    position: absolute; top: 10px; right: 10px;
-    font-size: 2em; z-index: 50; color: rgba(255,255,255,0.8);
+/* =========================================
+   5. MASTER GAME CONTAINER (Le Conteneur Unique)
+   ========================================= */
+#game-container {
+    /* Layout & Scroll */
+    flex-grow: 1; width: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    margin-top: 60px;
+    max-height: 85vh;
+    overflow-y: auto;
+
+    /* Style par défaut (Blanc) */
+    background: white;
+    border-radius: 25px; /* Arrondi partout */
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+
+    /* Safe Area Mobile */
+    padding-top: max(30px, env(safe-area-inset-top));
+    padding-bottom: max(30px, env(safe-area-inset-bottom));
+    padding-left: max(30px, env(safe-area-inset-left));
+    padding-right: max(30px, env(safe-area-inset-right));
 }
 
-
-/* Animations */
-@keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.hidden { display: none !important; }
-
+/* =========================================
+   6. UNDERCOVER SPECIFIC
+   ========================================= */
 .settings-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f9f9f9;
-    padding: 15px;
-    border-radius: 15px;
-    margin-bottom: 15px;
-    
-    /* AJOUTE CETTE LIGNE : */
-    gap: 15px; /* Crée un espace de sécurité entre le texte et les boutons */
+    display: flex; justify-content: space-between; align-items: center; gap: 15px;
+    background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 15px; width: 100%;
 }
-
 .counter-box { display: flex; align-items: center; gap: 15px; }
 .counter-btn {
     width: 35px; height: 35px; border-radius: 50%; border: none;
     background: var(--text-color); color: white; font-weight: bold; font-size: 1.2em;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-.counter-val { font-weight: 800; font-size: 1.2em; width: 20px; text-align: center; }
+.counter-val { font-weight: 800; font-size: 1.2em; width: 20px; }
 
-/* Liste d'élimination */
-.elimination-list { list-style: none; width: 100%; margin-top: 20px; }
+.elimination-list { 
+    list-style: none; width: 100%; margin-top: 20px; 
+    max-height: 50vh; overflow-y: auto;
+}
 .player-row {
     background: #f4f4f4; padding: 15px; margin-bottom: 10px; border-radius: 12px;
     display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; transition: transform 0.1s, background 0.2s;
-    text-align: left;
+    cursor: pointer; text-align: left;
 }
 .player-row:active { transform: scale(0.98); }
 .player-row.dead { opacity: 0.5; background: #e0e0e0; pointer-events: none; }
@@ -167,328 +234,45 @@ body {
     padding: 30px; border: 3px dashed #eee; border-radius: 20px; margin: 20px 0;
 }
 
-/* --- MODALE PERSONNALISÉE --- */
-.modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
-    z-index: 2000;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; transition: opacity 0.3s;
-}
-.modal-overlay.active { opacity: 1; pointer-events: all; }
+/* =========================================
+   7. RITUEL MODE (Cards & Flip)
+   ========================================= */
 
-.modal-box {
-    background: white; width: 85%; max-width: 320px;
-    padding: 25px; border-radius: 25px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.modal-overlay.active .modal-box { transform: scale(1); }
-
-.modal-box h3 { margin-bottom: 10px; color: var(--accent-color); font-size: 1.4em; }
-.modal-box p { margin-bottom: 25px; color: #666; font-size: 0.95em; }
-
-.modal-buttons { display: flex; gap: 10px; justify-content: center; }
-.modal-btn {
-    padding: 12px 20px; border: none; border-radius: 12px;
-    font-weight: 600; cursor: pointer; font-family: var(--font-main); flex: 1;
-}
-.modal-btn.primary { background: var(--accent-color); color: white; }
-.modal-btn.secondary { background: #f0f0f0; color: #555; }
-
-/* --- BOUTON SECONDAIRE (Changer de jeu, Annuler...) --- */
-.secondary-btn {
-    width: 100%;
-    padding: 18px;
-    border: 2px solid var(--text-color); /* Bordure au lieu du fond gris */
-    background: transparent;
-    color: var(--text-color);
-    border-radius: 18px;
-    font-size: 1.1em;
-    font-weight: 600;
-    font-family: var(--font-main);
-    cursor: pointer;
-    margin-top: 15px;
-    transition: all 0.2s;
-}
-.secondary-btn:hover {
-    background: var(--text-color);
-    color: white;
-}
-
-/* --- BLOQUER LE SCROLL GLOBAL --- */
-html, body {
-    height: 100%;
-    width: 100%;
-    overflow: hidden; /* Empêche de scroller la page entière */
-    position: fixed; /* Fixe le tout pour éviter le rebond sur iOS */
-}
-
-#app {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    /* On enlève le padding-bottom global car on gère l'espace interne */
-    padding-bottom: 0; 
-}
-
-/* --- ZONES SCROLLABLES --- */
-
-/* 1. La grille des joueurs sur l'accueil */
-.players-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    align-content: flex-start;
-    
-    /* GESTION DU SCROLL */
-    max-height: 60vh; /* Prend max 60% de la hauteur de l'écran */
-    overflow-y: auto; /* Scroll vertical si besoin */
-    padding-bottom: 100px; /* Espace pour ne pas cacher le dernier joueur sous le bouton */
-    width: 100%;
-}
-
-/* 2. La liste d'élimination (Vote Undercover) */
-.elimination-list {
-    list-style: none;
-    width: 100%;
-    margin-top: 20px;
-    
-    /* GESTION DU SCROLL */
-    max-height: 50vh; /* Prend max 50% de la hauteur */
-    overflow-y: auto; /* Scroll vertical si besoin */
-    padding-right: 5px; /* Petit espace pour pas coller à la barre de scroll */
-}
-
-#game-container {
-    /* 1. Mise en page */
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    margin-top: 60px;
-    width: 100%;
-
-    /* 2. Style (Fond blanc par défaut) */
-    background: white;
-    border-radius: 25px;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-
-    /* 3. Scroll et Taille */
-    max-height: 85vh;
-    overflow-y: auto; /* Active le scroll */
-    
-    /* 4. Cacher la barre de défilement (Firefox / IE) */
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-
-    /* 5. GESTION IPHONE (Encoche et Barre du bas) */
-    padding-top: max(30px, env(safe-area-inset-top));
-    padding-bottom: max(30px, env(safe-area-inset-bottom));
-    padding-left: max(30px, env(safe-area-inset-left));
-    padding-right: max(30px, env(safe-area-inset-right));
-}
-
-/* Cacher la barre de défilement (Chrome / Safari) */
-#game-container::-webkit-scrollbar {
-    display: none;
-}
-
-/* --- CACHER LES BARRES DE SCROLL (Style App) --- */
-
-/* Pour Chrome, Safari et Opera */
-.players-grid::-webkit-scrollbar,
-.elimination-list::-webkit-scrollbar,
-
-
-/* --- VERSION DE L'APP --- */
-.app-version {
-    position: fixed;
-    bottom: 5px;
-    right: 30px; /* En bas à droite */
-    font-size: 0.7em;
-    color: var(--text-color);
-    opacity: 0.3; /* Très discret */
-    pointer-events: none; /* On peut cliquer au travers */
-    z-index: 9999;
-    font-family: monospace; /* Style un peu "code" */
-}
-
-/* --- MODE RITUEL (Style CULTE) --- */
-
-/* CORRECTION DU CARRÉ BLANC : */
-/* On force le conteneur principal à devenir transparent quand on est en mode Rituel */
+/* Override Transparent pour le conteneur principal */
 #game-container.rituel-zone {
     background: transparent !important;
-    box-shadow: none !important; /* On enlève l'ombre du conteneur */
+    box-shadow: none !important;
     border: none !important;
-    
-    /* On garde le centrage */
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     padding: 20px;
-    perspective: 1000px;
+    perspective: 1000px; /* Vital pour la 3D */
+    justify-content: center;
 }
 
-/* La carte blanche (Elle reste blanche, c'est ce qu'on veut) */
-.rituel-card {
+/* Style commun Cartes (Recto, Verso, Simple) */
+.rituel-card, .flip-front, .flip-back {
     background: #ffffff;
     border-radius: 30px;
     padding: 40px 30px;
-    width: 100%;
-    max-width: 380px;
-    min-height: 55vh;
+    width: 100%; max-width: 380px; min-height: 55vh;
     
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    text-align: center;
+    display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center; text-align: center;
     
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15); /* Ombre portée sur la carte uniquement */
-    animation: cardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
     position: relative;
-    user-select: none;
+    
+    /* CORRECTIF CLIC MOBILE (Très important) */
+    -webkit-user-select: none; user-select: none; cursor: pointer;
 }
 
-/* ... Le reste du CSS Rituel (category, content, subtext...) reste identique ... */
-.rituel-category {
-    font-family: var(--font-main);
-    text-transform: uppercase;
-    font-size: 0.8em;
-    font-weight: 800;
-    letter-spacing: 2px;
-    padding: 10px 20px;
-    border-radius: 50px;
-    margin-bottom: 20px;
-    display: inline-block;
-}
-
-.rituel-content {
-    font-family: var(--font-main);
-    font-size: 1.8em;
-    font-weight: 700;
-    color: var(--text-color);
-    line-height: 1.4;
-    margin: 20px 0;
-}
-
-.rituel-subtext {
-    font-size: 0.9em;
-    color: #999;
-    font-weight: 500;
-}
-
-.tap-indicator {
-    margin-top: 25px;
-    font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes cardPop {
-    from { opacity: 0; transform: translateY(50px) scale(0.9); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes pulse {
-    0% { opacity: 0.4; }
-    50% { opacity: 1; }
-    100% { opacity: 0.4; }
-}
-
-/* --- MODE RITUEL : FLIP 3D --- */
-
-/* Le conteneur qui donne la perspective 3D */
+/* Mécanique Flip 3D */
 .flip-container {
-    background-color: transparent;
-    width: 100%;
-    max-width: 380px;
-    min-height: 55vh; /* Hauteur fixe nécessaire pour le flip */
-    perspective: 1000px; /* Profondeur 3D */
-    margin: 0 auto;
+    background: transparent; width: 100%; max-width: 380px; min-height: 55vh;
+    perspective: 1000px; margin: 0 auto;
+    transform-origin: center bottom;
 }
-
-/* Le "papier" qui tourne (contient le recto et le verso) */
 .flip-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-    transform-style: preserve-3d;
-    border-radius: 30px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-}
-
-/* La classe qu'on ajoute pour retourner la carte */
-.flip-container.flipped .flip-inner {
-    transform: rotateY(180deg);
-}
-
-/* Style commun Recto / Verso */
-.flip-front, .flip-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    -webkit-backface-visibility: hidden; /* Cache le dos */
-    backface-visibility: hidden;
-    border-radius: 30px;
-    padding: 30px;
-    background: white;
-    
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* --- RECTO (Question) --- */
-.flip-front {
-    z-index: 2;
-}
-
-/* --- VERSO (Vote) --- */
-.flip-back {
-    transform: rotateY(180deg); /* Déjà retourné au départ */
-    background: #f8f9fa; /* Fond légèrement différent pour le dos */
-    overflow-y: auto; /* Sécurité si beaucoup de joueurs */
-}
-
-/* --- MODE RITUEL : FLIP 3D & ANIMATIONS --- */
-
-/* Le conteneur qui donne la perspective 3D et qui sortira */
-.flip-container {
-    /* ... (reste identique) ... */
-    background-color: transparent;
-    width: 100%;
-    max-width: 380px;
-    min-height: 55vh;
-    perspective: 1000px;
-    margin: 0 auto;
-    /* IMPORTANT : pour que l'animation de sortie soit fluide */
-    transform-origin: center bottom; 
-}
-
-/* ... (.flip-inner et .flipped restent identiques) ... */
-.flip-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
+    position: relative; width: 100%; height: 100%;
     text-align: center;
     transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
     transform-style: preserve-3d;
@@ -497,110 +281,227 @@ html, body {
 }
 .flip-container.flipped .flip-inner { transform: rotateY(180deg); }
 
-
-/* Style commun Recto / Verso */
 .flip-front, .flip-back {
-    /* ... (reste identique) ... */
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    border-radius: 30px;
-    padding: 40px 30px; /* Un peu plus d'espace */
-    background: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
+    position: absolute; width: 100%; height: 100%;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    box-shadow: none; /* L'ombre est gérée par inner */
 }
-
 .flip-front { z-index: 2; }
-
-
-/* --- NOUVEAU DESIGN DU VERSO (Back) --- */
-.flip-back {
-    transform: rotateY(180deg);
-    background: #ffffff; /* Fond blanc propre comme le recto */
-    /* On centre le contenu verticalement */
-    justify-content: center; 
+.flip-back { 
+    transform: rotateY(180deg); 
+    background: #ffffff; 
+    justify-content: center;
 }
 
-.flip-back h3 {
-    font-family: var(--font-main);
-    font-size: 1.4em;
-    color: var(--accent-color); /* Couleur d'accentuation pour le titre */
-    margin-bottom: 5px;
+/* Contenu Carte */
+.rituel-category {
+    font-family: var(--font-main); text-transform: uppercase;
+    font-size: 0.8em; font-weight: 800; letter-spacing: 2px;
+    padding: 10px 20px; border-radius: 50px; margin-bottom: 20px;
+    display: inline-block;
+    -webkit-user-select: none; user-select: none; /* Anti-select */
 }
-
-.flip-back p {
-    font-weight: 500;
-    color: #999;
-    margin-bottom: 25px;
+.rituel-content {
+    font-family: var(--font-main); font-size: 1.8em;
+    font-weight: 700; color: var(--text-color);
+    line-height: 1.4; margin: 20px 0;
+    -webkit-user-select: none; user-select: none; /* Anti-select */
 }
+.rituel-content.long-text { font-size: 1.3em; }
+.rituel-subtext { font-size: 0.9em; color: #999; font-weight: 500; -webkit-user-select: none; user-select: none;}
 
-/* Nouvelle grille et boutons */
-.vote-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    width: 100%;
-}
-
-
-/* Bouton de vote (État normal) */
-.vote-btn {
-    background: #f4f6f8; 
-    border: none;
-    padding: 15px 10px;
-    border-radius: 50px;
-    font-family: var(--font-main);
-    font-weight: 700;
-    font-size: 0.95em;
-    color: var(--text-color);
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-    transition: all 0.2s ease;
-}
-
-/* État "Appuyé" ou "Sélectionné" (Reste rouge) */
-.vote-btn:active, .vote-btn.selected {
-    background: var(--accent-color);
-    color: white;
-    transform: scale(0.95) translateY(2px);
-    box-shadow: none;
-}
-
-/* --- ANIMATION DE SORTIE CORRIGÉE --- */
-
-/* Classe ajoutée en JS quand on clique sur un nom */
-.card-exit {
-    /* On ralentit l'animation à 0.8s (C'était 0.5s) */
-    animation: slideOutUp 0.8s forwards cubic-bezier(0.4, 0.0, 0.2, 1);
-    pointer-events: none; 
-}
-
-@keyframes slideOutUp {
-    0% {
-        opacity: 1;
-        /* CORRECTION : On ne force plus la rotation ici, on laisse l'état actuel */
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        /* La carte part juste vers le haut en rétrécissant */
-        transform: translateY(-150px) scale(0.85); 
-    }
-}
-
-/* Style pour la carte Virus */
+/* Virus Spécifique */
 .rituel-virus {
     border: 3px solid #2e7d32;
     background: #e8f5e9;
     box-shadow: 0 0 20px rgba(46, 125, 50, 0.2);
 }
 
-.rituel-content.long-text {
-    font-size: 1.3em; /* Plus petit que le 1.8em habituel */
+/* Grille de Vote (Verso) */
+.flip-back h3 { font-size: 1.4em; color: var(--accent-color); margin-bottom: 5px; }
+.flip-back p { font-weight: 500; color: #999; margin-bottom: 25px; }
+.vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+.vote-btn {
+    background: #f4f6f8; border: none; 
+    padding: 20px 15px; /* Plus d'espace interne (hitbox) */
+    min-height: 60px;   /* Hauteur minimale garantie */
+    border-radius: 50px; font-weight: 700; font-size: 1.1em; /* Texte un peu plus gros */
+    color: var(--text-color); cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: all 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.vote-btn:active, .vote-btn.selected {
+    background: var(--accent-color); color: white;
+    transform: scale(0.95) translateY(2px); box-shadow: none;
 }
 
+/* =========================================
+   8. ANIMATIONS & UTILITAIRES
+   ========================================= */
+@keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cardPop { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Sortie de carte */
+.card-exit {
+    animation: slideOutUp 0.8s forwards cubic-bezier(0.4, 0.0, 0.2, 1);
+    pointer-events: none;
+}
+/* Fix Miroir : stop transition quand ça part */
+.card-exit .flip-inner { transition: none !important; }
+
+@keyframes slideOutUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-150px) scale(0.85); }
+}
+
+/* Cacher Scrollbars (Clean UI) */
+.players-grid::-webkit-scrollbar,
+.elimination-list::-webkit-scrollbar,
+.games-grid::-webkit-scrollbar,
+#game-container::-webkit-scrollbar { display: none; }
+
+.players-grid, .elimination-list, .games-grid, #game-container {
+    -ms-overflow-style: none; scrollbar-width: none;
+}
+
+.hidden { display: none !important; }
+
+.app-version {
+    position: fixed; bottom: 5px; right: 30px;
+    font-size: 0.7em; color: var(--text-color); opacity: 0.3;
+    pointer-events: none; z-index: 9999; font-family: monospace;
+}
+
+/* --- FIX FINAL POUR LES CARTES QUI BLOQUENT --- */
+
+/* On désactive les événements de souris sur TOUT le contenu textuel */
+/* Le clic passera "au travers" et touchera la carte en dessous */
+.rituel-content, 
+.rituel-content span, 
+.rituel-content strong,
+.rituel-category, 
+.rituel-subtext {
+    pointer-events: none !important;
+}
+
+/* Par sécurité, on s'assure que le conteneur de flip gère le clic */
+.flip-container, .flip-inner, .flip-front, .flip-back {
+    pointer-events: auto;
+}
+
+/* =========================================
+   9. FIXES & NOUVEAUTÉS (Virus Bar)
+   ========================================= */
+
+/* CORRECTION HITBOX BOUTONS */
+.vote-btn {
+    background: #f4f6f8; border: none; 
+    padding: 20px 15px; /* Plus grand */
+    min-height: 60px;
+    border-radius: 50px; font-weight: 700; font-size: 1.1em;
+    color: var(--text-color); cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: all 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+
+/* CORRECTION 3D RITUEL (Cible la classe, pas l'ID parent) */
+/* Remplace l'ancien "#game-container.rituel-zone" par ceci : */
+.rituel-zone {
+    width: 100%;
+    flex-grow: 1;
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center;
+    perspective: 1000px;
+    /* Plus de background transparent ici, c'est géré par le wrapper */
+}
+
+/* CONTAINER PRINCIPAL DU JEU */
+#game-container.rituel-wrapper {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 10px 20px 20px 20px; /* Un peu moins de padding haut */
+    display: flex; 
+    flex-direction: column;
+}
+
+/* =========================================
+   MISE À JOUR SCROLL HORIZONTAL (Virus)
+   ========================================= */
+
+/* BARRE DE VIRUS (Top Bar) */
+#virus-area {
+    width: 100%;
+    margin-bottom: 15px;
+    z-index: 100;
+    animation: fadeIn 0.3s ease;
+    flex-shrink: 0;
+    overflow: hidden; /* Empêche le débordement vertical */
+}
+
+#virus-area.hidden { display: none; }
+
+.virus-scroller {
+    display: flex;
+    flex-wrap: nowrap; /* Force l'alignement sur une ligne */
+    gap: 10px;
+    overflow-x: auto; /* Active le scroll horizontal */
+    padding: 5px 5px 10px 5px; /* Un peu d'espace pour l'ombre */
+    width: 100%;
+    
+    /* Scroll fluide sur mobile (iOS) */
+    -webkit-overflow-scrolling: touch;
+    
+    /* Cache la barre de défilement (esthétique) */
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+.virus-scroller::-webkit-scrollbar { display: none; }
+
+.virus-badge {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    border: 1px solid #2e7d32;
+    color: #2e7d32;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 700;
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+    white-space: nowrap; /* Empêche le texte de passer à la ligne */
+    
+    /* LE PLUS IMPORTANT : Empêche le badge de rétrécir */
+    flex-shrink: 0; 
+    
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.virus-badge:active {
+    transform: scale(0.95);
+}
+
+.virus-icon { font-size: 1.2em; }
+
+/* =========================================
+   10. EFFETS SPÉCIAUX (SPLIT GAME)
+   ========================================= */
+
+/* Secousse : Uniquement pour la double trahison */
+@keyframes shakeCard {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.effect-shake {
+    animation: shakeCard 0.5s ease-in-out;
+    border: 3px solid #b71c1c !important; /* Bordure rouge pour marquer le coup */
+}

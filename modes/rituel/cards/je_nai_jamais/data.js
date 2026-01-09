@@ -15,8 +15,6 @@ export const data = [
   "Je n'ai jamais supprimé un message juste après l'avoir envoyé.",
   "Je n'ai jamais fait semblant de ne pas voir un message.",
   "Je n'ai jamais dit 'j'arrive' alors que j'étais encore chez moi.",
-  "Je n'ai jamais embrassé quelqu'un que je ne connaissais pas.",
-  "Je n'ai jamais regretté un bisou.",
   "Je n'ai jamais couché avec quelqu'un rencontré le même jour.",
   "Je n'ai jamais menti sur mes intentions.",
   "Je n'ai jamais fait genre 'je m'en fous' alors que pas du tout.",
