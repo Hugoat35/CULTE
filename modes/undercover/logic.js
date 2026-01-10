@@ -160,27 +160,53 @@ export default class UndercoverGame {
             if (this.config.undercover === 0) this.config.undercover = 1;
         }
 
+        // --- 2. CHOIX ET PRÉPARATION DES MOTS ---
         const rawPair = words[Math.floor(Math.random() * words.length)];
+        
+        let civWord = rawPair.civil;
+        let ucWord = rawPair.undercover;
+
+        // --- GESTION DES PLACEHOLDERS {p1} et {p2} ---
+        if (civWord.includes('{p1}') || ucWord.includes('{p1}') || civWord.includes('{p2}') || ucWord.includes('{p2}')) {
+            // On tire 2 joueurs au hasard parmi les présents
+            // On utilise une copie pour ne pas modifier l'ordre du jeu
+            const shuffledNames = [...this.players].sort(() => 0.5 - Math.random());
+            const p1 = shuffledNames[0];
+            const p2 = shuffledNames[1];
+
+            // Remplacement global
+            const replacePlaceholders = (text) => {
+                return text.replace(/{p1}/g, p1).replace(/{p2}/g, p2);
+            };
+
+            civWord = replacePlaceholders(civWord);
+            ucWord = replacePlaceholders(ucWord);
+        }
+
+        // --- 3. SWAP ALÉATOIRE (Qui a quel mot ?) ---
+        // 50% de chance d'inverser pour que le 1er mot de data.js ne soit pas toujours Civil
         const swap = Math.random() < 0.5;
         
-        const wordCivil = swap ? rawPair.undercover : rawPair.civil;
-        const wordUndercover = swap ? rawPair.civil : rawPair.undercover;
+        // Comme on a déjà remplacé les prénoms, on assigne les chaînes finales
+        const finalCivilWord = swap ? ucWord : civWord;
+        const finalUcWord = swap ? civWord : ucWord;
 
-        this.secretWord = wordCivil; 
+        this.secretWord = finalCivilWord; 
 
         // Création des rôles
         let roles = [];
-        for(let i=0; i<this.config.undercover; i++) roles.push({ type: 'Undercover', word: wordUndercover });
+        for(let i=0; i<this.config.undercover; i++) roles.push({ type: 'Undercover', word: finalUcWord });
         for(let i=0; i<this.config.mrWhite; i++) roles.push({ type: 'Mr. White', word: null });
         const nbCivils = this.players.length - roles.length;
-        for(let i=0; i<nbCivils; i++) roles.push({ type: 'Civil', word: wordCivil });
+        for(let i=0; i<nbCivils; i++) roles.push({ type: 'Civil', word: finalCivilWord });
 
-        // Mélange
+        // Mélange des rôles
         for (let i = roles.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [roles[i], roles[j]] = [roles[j], roles[i]];
         }
 
+        // Assignation aux joueurs
         this.assignments = this.players.map((name, index) => ({
             name: name,
             role: roles[index].type,
@@ -189,12 +215,11 @@ export default class UndercoverGame {
             originalIndex: index
         }));
 
-        // --- 2. CHOIX DU JOUEUR QUI COMMENCE LE DÉBAT ---
+        // --- 4. CHOIX DU JOUEUR QUI COMMENCE LE DÉBAT ---
         // On choisit un joueur au hasard
         let startIndex = Math.floor(Math.random() * this.assignments.length);
         
-        // TANT QUE c'est Mr. White, on passe au suivant
-        // (Pour ne pas qu'il commence sans mot)
+        // TANT QUE c'est Mr. White, on passe au suivant (pour ne pas qu'il commence sans mot)
         while (this.assignments[startIndex].role === 'Mr. White') {
             startIndex = (startIndex + 1) % this.assignments.length;
         }
@@ -437,11 +462,18 @@ export default class UndercoverGame {
         
         this.container.innerHTML = html;
         this.container.querySelector('#restart-btn').onclick = () => this.start();
+        
+        // CORRECTION ICI : Utilisation de la navigation propre
         this.container.querySelector('#quit-btn').onclick = () => {
-             this.container.innerHTML = '';
-             document.getElementById('screen-game').classList.add('hidden');
-             document.getElementById('screen-selection').classList.remove('hidden');
-             document.getElementById('screen-selection').classList.add('active');
+             if (window.returnToSelection) {
+                 window.returnToSelection();
+             } else {
+                 // Fallback si la fonction n'est pas encore chargée
+                 this.container.innerHTML = '';
+                 document.getElementById('screen-game').classList.add('hidden');
+                 document.getElementById('screen-selection').classList.remove('hidden');
+                 document.getElementById('screen-selection').classList.add('active');
+             }
         };
     }
 }

@@ -168,8 +168,9 @@ export default class FakeItGame {
                 this.scores[guesser] += 1;
                 logs.push(`<span style="color:#2e7d32">✔ <strong>${guesser}</strong> a trouvé (+1)</span>`);
             } else {
-                this.scores[vote.author] += 2;
-                logs.push(`<span style="color:#c62828">✖ <strong>${guesser}</strong> s'est fait avoir par <strong>${vote.author}</strong> (+2)</span>`);
+                // MODIFICATION ICI : +1 point pour le bluffeur au lieu de +2
+                this.scores[vote.author] += 1;
+                logs.push(`<span style="color:#c62828">✖ <strong>${guesser}</strong> s'est fait avoir par <strong>${vote.author}</strong> (+1)</span>`);
             }
         });
 
@@ -213,7 +214,6 @@ export default class FakeItGame {
     }
 
     showFinalScore() {
-        // Tri des scores
         const sorted = Object.entries(this.scores).sort((a,b) => b[1] - a[1]);
         const html = sorted.map(([name, score], i) => `
             <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
@@ -225,22 +225,7 @@ export default class FakeItGame {
         this.container.innerHTML = `
             <h2>Classement Final 🏆</h2>
             <div style="width:100%; margin:20px 0;">${html}</div>
-            <button id="back-menu-btn" class="main-btn">Retour Menu</button>
+            <button class="main-btn" onclick="window.returnToSelection()">Retour Menu</button>
         `;
-
-        // --- CORRECTION ICI : RETOUR MANUEL SANS RECHARGEMENT ---
-        this.container.querySelector('#back-menu-btn').onclick = () => {
-            this.container.innerHTML = ''; // On vide le jeu
-            
-            // On cache l'écran de jeu
-            const screenGame = document.getElementById('screen-game');
-            screenGame.classList.remove('active');
-            screenGame.classList.add('hidden');
-
-            // On affiche l'écran de sélection
-            const screenSelection = document.getElementById('screen-selection');
-            screenSelection.classList.remove('hidden');
-            screenSelection.classList.add('active');
-        };
     }
 }

@@ -22,5 +22,6 @@ export const words = [
     { civil: "Levrette", undercover: "Missionaire" },
     { civil: "Kebab douteux", undercover: "Sandwich triangle périmé" },
     { civil: "Haleine du matin", undercover: "Haleine de café" },
+    { civil: "{p1}", undercover: "{p2}" }
 
 ];
