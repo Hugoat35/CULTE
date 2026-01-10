@@ -16,7 +16,7 @@ export default [
     },
     {
         game: Divers,
-        weight: 5 
+        weight: 5.2
     },
     {
         game: Virus,
@@ -24,7 +24,7 @@ export default [
     },
     {
         game: Hardcore,
-        weight: 0.4
+        weight: 0.3
     },
     {
         game: JeuxGame,

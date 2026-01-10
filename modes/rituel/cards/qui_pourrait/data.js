@@ -101,4 +101,5 @@ export const data = [
   "Qui pourrait pousser sur une porte qui dit 'tirer' ?",
   "Qui est le plus susceptible de faire un blackout et de se réveiller chez un inconnu ?",
   "Qui est le plus susceptible de faire un strip-tease sur du Disney ?",
+  "Qui aurait pu être collabo à l'époque de vous savez qui ?",
 ]

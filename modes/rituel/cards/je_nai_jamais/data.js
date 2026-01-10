@@ -43,4 +43,5 @@ export const data = [
   "Je n'ai jamais dormi dans le bus et raté mon arrêt.",
   "Je n'ai jamais fait semblant de connaître quelqu'un pour éviter une gêne.",
   "Je n'ai jamais porté les mêmes sous-vêtements trois jours de suite.",
+  "Je n'ai jamais conduit en étant ivre.",
 ];

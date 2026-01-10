@@ -20,7 +20,7 @@ export const getRule = (value, color) => {
         case 6: return "<strong>6 - Dans ma valise :</strong> « Dans ma valise il y a... ». Les suivants répètent et ajoutent un mot. 1ère erreur = 1 gorgée.";
         case 7: return "<strong>7 - Maître de la question :</strong> Si tu poses une question, celui qui répond boit. Sauf s'il dit « Ta gueule » (tu bois).";
         case 8: return "<strong>8 :</strong> Distribue 8 gorgées comme tu veux.";
-        case 9: return "<strong>9 - J'ai déjà / J'ai jamais :</strong> Raconte une expérience. Ceux qui l'ont fait boivent.";
+        case 9: return "<strong>9 - J'ai déjà / J'ai jamais :</strong> Raconte une expérience. Ceux qui ne l'ont jamais fait boivent.";
         case 10: return "<strong>10 - Maître du Freeze :</strong> Quand tu te figes, tout le monde doit t'imiter. Le dernier boit.";
         
         // --- NOUVELLES RÈGLES ---
