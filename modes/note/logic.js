@@ -19,15 +19,16 @@ export default class NoteGame {
         this.note = Math.floor(Math.random() * 10) + 1;
         this.currentTheme = themes[Math.floor(Math.random() * themes.length)];
 
+        // 1. Mélange des joueurs
         let shuffled = [...this.players].sort(() => 0.5 - Math.random());
+        
+        // 2. Définition du nombre de sachants (MODIFIÉ)
+        // On veut un nombre aléatoire strict entre 1 et (Total - 1)
         const maxHolders = this.players.length - 1;
-        let nbHolders;
-
-        if (Math.random() > 0.3 && maxHolders >= 1) {
-            nbHolders = maxHolders;
-        } else {
-            nbHolders = Math.floor(Math.random() * maxHolders) + 1;
-        }
+        
+        // Math.random() * maxHolders donne un nombre entre 0 et max-1 (ex: 0 à 1.99 pour 2)
+        // Math.floor(...) + 1 ramène ça entre 1 et max.
+        const nbHolders = Math.floor(Math.random() * maxHolders) + 1;
 
         this.holders = shuffled.slice(0, nbHolders);
         this.guessers = shuffled.slice(nbHolders);
@@ -36,7 +37,11 @@ export default class NoteGame {
     }
 
     showIntro() {
-        const holdersList = this.holders.map(p => `<strong>${p}</strong>`).join(', ');
+        // On formate la liste pour qu'elle soit jolie (ex: "Hugo et Thomas")
+        const holdersNames = this.holders.map(p => `<strong>${p}</strong>`);
+        const holdersList = holdersNames.length > 1 
+            ? holdersNames.slice(0, -1).join(', ') + ' et ' + holdersNames.slice(-1)
+            : holdersNames[0];
         
         this.container.innerHTML = `
             <div style="font-size:3em; margin-bottom:10px;">🎯</div>
@@ -74,7 +79,10 @@ export default class NoteGame {
     }
 
     showGamePhase() {
-        const guessersList = this.guessers.map(p => `<strong style="color:var(--accent-color)">${p}</strong>`).join(', ');
+        const guessersNames = this.guessers.map(p => `<strong style="color:var(--accent-color)">${p}</strong>`);
+        const guessersList = guessersNames.length > 1 
+            ? guessersNames.slice(0, -1).join(', ') + ' et ' + guessersNames.slice(-1)
+            : guessersNames[0];
 
         this.container.innerHTML = `
             <div style="font-size:3em; margin-bottom:10px;">🤔</div>
@@ -82,7 +90,7 @@ export default class NoteGame {
             <p>${guessersList}, c'est à vous.</p>
 
             <div style="background:#e3f2fd; padding:20px; border-radius:20px; margin:20px 0; border:2px solid #2196f3;">
-                <p style="font-size:0.9em; color:#1565c0; margin-bottom:5px;">IDÉE DE QUESTION :</p>
+                <p style="font-size:0.9em; color:#1565c0; margin-bottom:5px;">EXEMPLE DE QUESTION :</p>
                 <p style="font-size:1.2em; font-weight:bold; color:#0d47a1;">
                     "Donne-moi un(e) ${this.currentTheme} qui vaut cette note."
                 </p>
@@ -99,7 +107,7 @@ export default class NoteGame {
     }
 
     reveal() {
-        if (this.note >= 8 && window.confetti) window.confetti();
+        if (window.confetti) window.confetti();
 
         this.container.innerHTML = `
             <h2>La note était...</h2>

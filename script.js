@@ -1,11 +1,10 @@
 /* --- script.js --- */
 
-// 1. NETTOYAGE RADICAL AU DÉMARRAGE
-// On supprime toute mémoire précédente pour éviter les fantômes
+// 1. SÉCURITÉ : On vide la mémoire du téléphone au lancement
 localStorage.removeItem('culte_players');
 
 const state = {
-    players: [], // On part de zéro, toujours.
+    players: [], // On commence toujours vide
     currentGame: null
 };
 
@@ -23,11 +22,12 @@ const btnAdd = document.getElementById('add-player-btn');
 const btnToGames = document.getElementById('to-games-btn');
 const gameContainer = document.getElementById('game-container');
 
-// --- FONCTIONS JOUEURS ---
+// --- FONCTIONS JOUEURS (SANS SAUVEGARDE) ---
 
-// On expose la fonction suppression proprement
+// Fonction appelée par le HTML pour supprimer un joueur
 window.removePlayer = function(index) {
     state.players.splice(index, 1);
+    // Pas de savePlayers() ici !
     updatePlayerList();
 };
 
@@ -35,6 +35,7 @@ function addPlayer() {
     const name = inputName.value.trim();
     if (name && !state.players.includes(name)) {
         state.players.push(name);
+        // Pas de savePlayers() ici non plus !
         inputName.value = '';
         updatePlayerList();
         inputName.focus();
@@ -51,6 +52,7 @@ function updatePlayerList() {
     state.players.forEach((player, index) => {
         const chip = document.createElement('div');
         chip.className = 'player-chip';
+        // Rotation aléatoire pour le style
         chip.style.transform = `rotate(${(Math.random() - 0.5) * 4}deg)`;
         chip.innerHTML = `
             ${player}
@@ -62,6 +64,7 @@ function updatePlayerList() {
     const count = state.players.length;
     playerCountLabel.innerText = `${count} Joueur${count > 1 ? 's' : ''}`;
     
+    // Activation du bouton si au moins 2 joueurs
     if (count >= 2) {
         btnToGames.disabled = false;
         btnToGames.innerText = "Choisir un jeu";
@@ -74,22 +77,32 @@ function updatePlayerList() {
 // --- NAVIGATION & UI ---
 
 function showScreen(screenId) {
+    // 1. Cacher tous les écrans
     Object.values(screens).forEach(s => {
         s.classList.remove('active');
         s.classList.add('hidden');
     });
+    // 2. Afficher la cible
     const target = document.getElementById(screenId);
     if(target) {
         target.classList.remove('hidden');
         target.classList.add('active');
     }
 
+    // 3. Mettre à jour l'état des cartes (Undercover...)
     if(screenId === 'screen-selection') {
-        refreshUndercoverCard();
+        refreshGameCards();
     }
 }
 
-function refreshUndercoverCard() {
+// Fonction globale pour revenir au menu des jeux (utilisée par FakeIt)
+window.returnToSelection = () => {
+    gameContainer.innerHTML = ''; // Vide le jeu en cours
+    state.currentGame = null;
+    showScreen('screen-selection');
+};
+
+function refreshGameCards() {
     const ucCard = document.querySelector('.game-card[data-game="undercover"]');
     if (!ucCard) return;
 
@@ -117,14 +130,13 @@ document.querySelectorAll('.back-btn').forEach(btn => {
     });
 });
 
+// Bouton Croix pour quitter
 document.getElementById('quit-game-btn').addEventListener('click', () => {
     window.showCustomModal(
         "Quitter la partie ?",
         "La progression sera perdue.",
         () => {
-            gameContainer.innerHTML = '';
-            state.currentGame = null;
-            showScreen('screen-selection');
+            window.returnToSelection();
         }
     );
 });
@@ -135,14 +147,10 @@ document.querySelectorAll('.game-card').forEach(card => {
     card.addEventListener('click', async () => {
         const gameName = card.dataset.game;
 
-        // VÉRIFICATION STRICTE
+        // Sécurité Undercover
         if (gameName === 'undercover') {
             if (state.players.length < 3) {
-                window.showCustomModal(
-                    "Pas assez de joueurs",
-                    "Il faut être au moins 3 pour jouer à Undercover !",
-                    null 
-                );
+                window.showCustomModal("Pas assez de joueurs", "Il faut 3 joueurs minimum.", null);
                 return;
             }
         }
@@ -153,7 +161,7 @@ document.querySelectorAll('.game-card').forEach(card => {
             const module = await import(`./modes/${gameName}/logic.js`);
             showScreen('screen-game');
             gameContainer.innerHTML = '';
-            // On envoie une copie propre de la liste
+            // On lance le jeu avec une COPIE de la liste (pour éviter les modifs accidentelles)
             state.currentGame = new module.default([...state.players], gameContainer);
             state.currentGame.start();
         } catch (err) {
@@ -189,10 +197,7 @@ window.showCustomModal = (title, message, onConfirm) => {
     if (onConfirm) {
         modal.btnCancel.style.display = 'block';
         modal.btnConfirm.innerText = "Confirmer";
-        modal.btnConfirm.addEventListener('click', () => {
-            closeModal();
-            onConfirm();
-        });
+        modal.btnConfirm.addEventListener('click', () => { closeModal(); onConfirm(); });
     } else {
         modal.btnCancel.style.display = 'none';
         modal.btnConfirm.innerText = "C'est compris";
@@ -206,5 +211,5 @@ function closeModal() {
     setTimeout(() => modal.overlay.classList.add('hidden'), 300);
 }
 
-// Init
+// Initialisation
 updatePlayerList();
